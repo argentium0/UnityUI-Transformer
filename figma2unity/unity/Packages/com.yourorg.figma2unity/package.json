@@ -1,0 +1,21 @@
+{
+  "name": "com.yourorg.figma2unity",
+  "version": "0.1.0",
+  "displayName": "Figma2Unity Importer",
+  "description": "Figma to Unity UI importer package generating UI Toolkit UXML/USS structures.",
+  "unity": "6000.0",
+  "documentationUrl": "https://github.com/yourorg/figma2unity",
+  "dependencies": {
+    "com.unity.nuget.newtonsoft-json": "3.2.1"
+  },
+  "keywords": [
+    "figma",
+    "ui-toolkit",
+    "importer",
+    "uxml",
+    "uss"
+  ],
+  "author": {
+    "name": "YourOrg"
+  }
+}

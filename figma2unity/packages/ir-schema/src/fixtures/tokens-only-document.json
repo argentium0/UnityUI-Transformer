@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "1.0.0",
+  "metadata": {
+    "exportedAt": "2026-08-17T12:00:00.000Z",
+    "generatorVersion": "1.0.0"
+  },
+  "tokens": {
+    "colors": [
+      {
+        "id": "color-primary",
+        "name": "Primary",
+        "value": { "r": 0.1, "g": 0.5, "b": 0.9, "a": 1 }
+      },
+      {
+        "id": "color-background",
+        "name": "Background",
+        "value": { "r": 1, "g": 1, "b": 1, "a": 1 }
+      }
+    ],
+    "typography": [
+      {
+        "id": "type-body",
+        "name": "Body Regular",
+        "fontFamily": "Roboto",
+        "fontSize": 14,
+        "fontWeight": 400
+      }
+    ],
+    "spacing": [
+      {
+        "id": "space-sm",
+        "name": "Small",
+        "value": 8
+      }
+    ],
+    "effects": [
+      {
+        "id": "effect-shadow",
+        "name": "Card Shadow",
+        "effects": [
+          {
+            "type": "DROP_SHADOW",
+            "color": { "r": 0, "g": 0, "b": 0, "a": 0.15 },
+            "offset": { "x": 0, "y": 4 },
+            "radius": 8,
+            "spread": 0
+          }
+        ]
+      }
+    ]
+  },
+  "rootNodes": []
+}

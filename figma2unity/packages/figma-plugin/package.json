@@ -1,0 +1,20 @@
+{
+  "name": "@figma2unity/figma-plugin",
+  "version": "0.1.0",
+  "main": "dist/code.js",
+  "type": "module",
+  "scripts": {
+    "build": "node esbuild.config.mjs"
+  },
+  "dependencies": {
+    "@figma2unity/ir-schema": "*",
+    "fflate": "^0.8.2",
+    "jszip": "^3.10.1",
+    "preact": "^10.22.0"
+  },
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.98.0",
+    "@types/jszip": "^3.4.0",
+    "esbuild": "^0.23.0"
+  }
+}

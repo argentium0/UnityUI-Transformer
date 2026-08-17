@@ -1,0 +1,102 @@
+{
+  "schemaVersion": "1.0.0",
+  "metadata": {
+    "exportedAt": "2026-08-17T12:00:00.000Z",
+    "figmaFileKey": "abc123XYZ",
+    "figmaFileName": "DesignSystem_Card",
+    "generatorVersion": "1.0.0"
+  },
+  "tokens": {
+    "colors": [
+      {
+        "id": "token-color-primary",
+        "name": "Brand/Primary",
+        "value": { "r": 0.05, "g": 0.6, "b": 1, "a": 1 },
+        "hex": "#0D99FF"
+      }
+    ],
+    "typography": [
+      {
+        "id": "token-type-heading",
+        "name": "Header/H1",
+        "fontFamily": "Inter",
+        "fontSize": 24,
+        "fontWeight": 700
+      }
+    ],
+    "spacing": [
+      {
+        "id": "token-space-md",
+        "name": "Space/Medium",
+        "value": 16
+      }
+    ],
+    "effects": []
+  },
+  "rootNodes": [
+    {
+      "id": "1:100",
+      "name": "CardContainer",
+      "type": "FRAME",
+      "visible": true,
+      "opacity": 1,
+      "rotation": 0,
+      "bounds": { "x": 0, "y": 0, "width": 320, "height": 400 },
+      "autoLayout": {
+        "layoutMode": "VERTICAL",
+        "gap": 16,
+        "padding": { "top": 16, "right": 16, "bottom": 16, "left": 16 },
+        "primaryAxisSizingMode": "AUTO",
+        "counterAxisSizingMode": "FIXED",
+        "primaryAxisAlign": "MIN",
+        "counterAxisAlign": "MIN",
+        "layoutAlign": "INHERIT",
+        "layoutGrow": 0
+      },
+      "fills": [
+        { "tokenId": "token-color-primary", "type": "SOLID" }
+      ],
+      "strokes": [],
+      "cornerRadius": { "topLeft": 12, "topRight": 12, "bottomRight": 12, "bottomLeft": 12 },
+      "effects": [],
+      "clipsContent": true,
+      "children": [
+        {
+          "id": "1:101",
+          "name": "CardTitle",
+          "type": "TEXT",
+          "visible": true,
+          "opacity": 1,
+          "rotation": 0,
+          "bounds": { "x": 16, "y": 16, "width": 288, "height": 32 },
+          "characters": "Welcome to Figma2Unity",
+          "typographyTokenId": "token-type-heading",
+          "fontFamily": "Inter",
+          "fontSize": 24,
+          "fontWeight": 700,
+          "textAlign": "LEFT",
+          "textAutoResize": "HEIGHT",
+          "fills": [],
+          "strokes": [],
+          "cornerRadius": { "topLeft": 0, "topRight": 0, "bottomRight": 0, "bottomLeft": 0 },
+          "effects": []
+        },
+        {
+          "id": "1:102",
+          "name": "HeroImage",
+          "type": "IMAGE",
+          "visible": true,
+          "opacity": 1,
+          "rotation": 0,
+          "bounds": { "x": 16, "y": 64, "width": 288, "height": 180 },
+          "imageAssetRef": "images/hero_102.png",
+          "scaleMode": "FILL",
+          "fills": [],
+          "strokes": [],
+          "cornerRadius": { "topLeft": 8, "topRight": 8, "bottomRight": 8, "bottomLeft": 8 },
+          "effects": []
+        }
+      ]
+    }
+  ]
+}

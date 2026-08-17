@@ -1,0 +1,10 @@
+{
+  "name": "Figma2Unity Importer",
+  "id": "figma2unity-plugin",
+  "api": "1.0.0",
+  "main": "dist/code.js",
+  "ui": "dist/ui.html",
+  "editorType": [
+    "figma"
+  ]
+}

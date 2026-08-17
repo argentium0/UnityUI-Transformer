@@ -1,0 +1,223 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`IRDocumentSchema > validates and matches snapshot for sample card document fixture 1`] = `
+{
+  "metadata": {
+    "exportedAt": "2026-08-17T12:00:00.000Z",
+    "figmaFileKey": "abc123XYZ",
+    "figmaFileName": "DesignSystem_Card",
+    "generatorVersion": "1.0.0",
+  },
+  "rootNodes": [
+    {
+      "autoLayout": {
+        "counterAxisAlign": "MIN",
+        "counterAxisSizingMode": "FIXED",
+        "gap": 16,
+        "layoutAlign": "INHERIT",
+        "layoutGrow": 0,
+        "layoutMode": "VERTICAL",
+        "padding": {
+          "bottom": 16,
+          "left": 16,
+          "right": 16,
+          "top": 16,
+        },
+        "primaryAxisAlign": "MIN",
+        "primaryAxisSizingMode": "AUTO",
+      },
+      "bounds": {
+        "height": 400,
+        "width": 320,
+        "x": 0,
+        "y": 0,
+      },
+      "children": [
+        {
+          "bounds": {
+            "height": 32,
+            "width": 288,
+            "x": 16,
+            "y": 16,
+          },
+          "characters": "Welcome to Figma2Unity",
+          "cornerRadius": {
+            "bottomLeft": 0,
+            "bottomRight": 0,
+            "topLeft": 0,
+            "topRight": 0,
+          },
+          "effects": [],
+          "fills": [],
+          "fontFamily": "Inter",
+          "fontSize": 24,
+          "fontWeight": 700,
+          "id": "1:101",
+          "name": "CardTitle",
+          "opacity": 1,
+          "rotation": 0,
+          "strokes": [],
+          "textAlign": "LEFT",
+          "textAutoResize": "HEIGHT",
+          "type": "TEXT",
+          "typographyTokenId": "token-type-heading",
+          "visible": true,
+        },
+        {
+          "bounds": {
+            "height": 180,
+            "width": 288,
+            "x": 16,
+            "y": 64,
+          },
+          "cornerRadius": {
+            "bottomLeft": 8,
+            "bottomRight": 8,
+            "topLeft": 8,
+            "topRight": 8,
+          },
+          "effects": [],
+          "fills": [],
+          "id": "1:102",
+          "imageAssetRef": "images/hero_102.png",
+          "name": "HeroImage",
+          "opacity": 1,
+          "rotation": 0,
+          "scaleMode": "FILL",
+          "strokes": [],
+          "type": "IMAGE",
+          "visible": true,
+        },
+      ],
+      "clipsContent": true,
+      "cornerRadius": {
+        "bottomLeft": 12,
+        "bottomRight": 12,
+        "topLeft": 12,
+        "topRight": 12,
+      },
+      "effects": [],
+      "fills": [
+        {
+          "tokenId": "token-color-primary",
+          "type": "SOLID",
+        },
+      ],
+      "id": "1:100",
+      "name": "CardContainer",
+      "opacity": 1,
+      "rotation": 0,
+      "strokes": [],
+      "type": "FRAME",
+      "visible": true,
+    },
+  ],
+  "schemaVersion": "1.0.0",
+  "tokens": {
+    "colors": [
+      {
+        "hex": "#0D99FF",
+        "id": "token-color-primary",
+        "name": "Brand/Primary",
+        "value": {
+          "a": 1,
+          "b": 1,
+          "g": 0.6,
+          "r": 0.05,
+        },
+      },
+    ],
+    "effects": [],
+    "spacing": [
+      {
+        "id": "token-space-md",
+        "name": "Space/Medium",
+        "value": 16,
+      },
+    ],
+    "typography": [
+      {
+        "fontFamily": "Inter",
+        "fontSize": 24,
+        "fontWeight": 700,
+        "id": "token-type-heading",
+        "name": "Header/H1",
+      },
+    ],
+  },
+}
+`;
+
+exports[`IRDocumentSchema > validates and matches snapshot for tokens only document fixture 1`] = `
+{
+  "metadata": {
+    "exportedAt": "2026-08-17T12:00:00.000Z",
+    "generatorVersion": "1.0.0",
+  },
+  "rootNodes": [],
+  "schemaVersion": "1.0.0",
+  "tokens": {
+    "colors": [
+      {
+        "id": "color-primary",
+        "name": "Primary",
+        "value": {
+          "a": 1,
+          "b": 0.9,
+          "g": 0.5,
+          "r": 0.1,
+        },
+      },
+      {
+        "id": "color-background",
+        "name": "Background",
+        "value": {
+          "a": 1,
+          "b": 1,
+          "g": 1,
+          "r": 1,
+        },
+      },
+    ],
+    "effects": [
+      {
+        "effects": [
+          {
+            "color": {
+              "a": 0.15,
+              "b": 0,
+              "g": 0,
+              "r": 0,
+            },
+            "offset": {
+              "x": 0,
+              "y": 4,
+            },
+            "radius": 8,
+            "spread": 0,
+            "type": "DROP_SHADOW",
+          },
+        ],
+        "id": "effect-shadow",
+        "name": "Card Shadow",
+      },
+    ],
+    "spacing": [
+      {
+        "id": "space-sm",
+        "name": "Small",
+        "value": 8,
+      },
+    ],
+    "typography": [
+      {
+        "fontFamily": "Roboto",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "id": "type-body",
+        "name": "Body Regular",
+      },
+    ],
+  },
+}
+`;
