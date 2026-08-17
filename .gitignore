@@ -74,7 +74,6 @@ docs/
 *.key
 *.p12
 *.pfx
-PAT_*.txt
 PAT_antigravity_github.txt
 secrets/
 
