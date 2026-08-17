@@ -43,7 +43,7 @@ coverage/
 *.idb
 
 # ------------------------------------------------------------------------------
-# Section 3: Operating System & IDE Development Caches
+# Section 3: Operating System, IDE & Assistant Rules
 # ------------------------------------------------------------------------------
 # Operating System files
 .DS_Store
@@ -54,11 +54,16 @@ coverage/
 ehthumbs.db
 Thumbs.db
 
-# IDE & Editor development metadata
+# IDE, Editor development metadata & cursor rules
 .idea/
 .vscode/
 *.suo
 *.user
+.cursorrules
+
+# Documentation directories
+docs/
+**/docs/
 
 # ------------------------------------------------------------------------------
 # Section 4: Security, Authentication Tokens & Secrets
@@ -75,13 +80,6 @@ secrets/
 
 # ------------------------------------------------------------------------------
 # Section 5: Antigravity Agent Internal Caches & Customizations
-# Explicitly ignores session caches while allowing shared development rules/skills
 # ------------------------------------------------------------------------------
-.agents/sessions/
+.agents/
 .antigravity/
-!.agents/rules/
-!.agents/agents/
-!.agents/skills/
-docs/01-tech-stack.md
-docs/02-prd.md
-docs/03-antigravity-build-plan.md
