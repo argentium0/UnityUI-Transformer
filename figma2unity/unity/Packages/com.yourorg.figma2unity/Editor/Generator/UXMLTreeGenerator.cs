@@ -1,0 +1,108 @@
+using System;
+using System.IO;
+using System.Xml.Linq;
+using Figma2Unity.Editor.Schema;
+
+namespace Figma2Unity.Editor.Generator
+{
+    public static class UXMLTreeGenerator
+    {
+        private static readonly XNamespace UiNs = "UnityEngine.UIElements";
+        private static readonly XNamespace UieNs = "UnityEditor.UIElements";
+
+        public static string GenerateUXML(IRNode rootNode, string ussRelativePath)
+        {
+            if (rootNode == null) return string.Empty;
+
+            var doc = new XDocument(new XDeclaration("1.0", "utf-8", "yes"));
+            var rootUxml = new XElement(UiNs + "UXML",
+                new XAttribute(XNamespace.Xmlns + "ui", UiNs.NamespaceName),
+                new XAttribute(XNamespace.Xmlns + "uie", UieNs.NamespaceName)
+            );
+
+            // Add Style reference if USS path is provided
+            if (!string.IsNullOrEmpty(ussRelativePath))
+            {
+                string sanitizedUssPath = ussRelativePath.Replace('\\', '/');
+                rootUxml.Add(new XElement(UiNs + "Style", new XAttribute("src", sanitizedUssPath)));
+            }
+
+            // Generate tree hierarchy starting from rootNode
+            XElement rootElement = BuildXmlElement(rootNode);
+            if (rootElement != null)
+            {
+                rootUxml.Add(rootElement);
+            }
+
+            doc.Add(rootUxml);
+
+            using (var stringWriter = new StringWriter())
+            {
+                doc.Save(stringWriter);
+                return stringWriter.ToString();
+            }
+        }
+
+        private static XElement BuildXmlElement(IRNode node)
+        {
+            if (node == null || !node.visible) return null;
+
+            string className = USSStyleGenerator.SanitizeClassName(node.name, node.id);
+
+            XElement element;
+
+            if (node is TextNode textNode)
+            {
+                element = new XElement(UiNs + "Label");
+                element.SetAttributeValue("text", textNode.characters ?? string.Empty);
+            }
+            else if (node is ImageNode imageNode)
+            {
+                element = new XElement(UiNs + "Image");
+            }
+            else if (node is VectorNode vectorNode)
+            {
+                element = new XElement(UiNs + "Image");
+            }
+            else if (node is UnsupportedNode unsupportedNode)
+            {
+                element = new XElement(UiNs + "Image");
+            }
+            else
+            {
+                element = new XElement(UiNs + "VisualElement");
+            }
+
+            element.SetAttributeValue("name", node.name ?? "Element");
+            element.SetAttributeValue("class", className);
+
+            // Add children for container node types
+            if (node is FrameNode frameNode && frameNode.children != null)
+            {
+                foreach (var child in frameNode.children)
+                {
+                    var childXml = BuildXmlElement(child);
+                    if (childXml != null) element.Add(childXml);
+                }
+            }
+            else if (node is GroupNode groupNode && groupNode.children != null)
+            {
+                foreach (var child in groupNode.children)
+                {
+                    var childXml = BuildXmlElement(child);
+                    if (childXml != null) element.Add(childXml);
+                }
+            }
+            else if (node is ComponentInstanceNode compNode && compNode.children != null)
+            {
+                foreach (var child in compNode.children)
+                {
+                    var childXml = BuildXmlElement(child);
+                    if (childXml != null) element.Add(childXml);
+                }
+            }
+
+            return element;
+        }
+    }
+}

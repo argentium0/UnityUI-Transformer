@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using UnityEditor;
 using UnityEngine;
 using Figma2Unity.Editor.Schema;
+using Figma2Unity.Editor.Generator;
 
 namespace Figma2Unity.Editor.Importer
 {
@@ -115,6 +116,10 @@ namespace Figma2Unity.Editor.Importer
 
                 // 6. Configure TextureImporter for imported PNG raster assets
                 ConfigureRasterAssets(destFolder);
+
+                // 7. Generate UI Toolkit UXML & USS structures
+                string generatedFolder = Path.Combine("Assets", "Figma2Unity", "Generated", packageName);
+                UIToolkitGenerator.Generate(document, generatedFolder, packageName);
 
                 return new ImportResult
                 {
