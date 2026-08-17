@@ -82,3 +82,6 @@ secrets/
 !.agents/rules/
 !.agents/agents/
 !.agents/skills/
+docs/01-tech-stack.md
+docs/02-prd.md
+docs/03-antigravity-build-plan.md
