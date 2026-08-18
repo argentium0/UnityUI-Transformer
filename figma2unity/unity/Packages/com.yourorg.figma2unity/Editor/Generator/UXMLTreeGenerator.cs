@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.Text;
+using System.Xml;
 using System.Xml.Linq;
 using Figma2Unity.Editor.Schema;
 
@@ -10,11 +12,16 @@ namespace Figma2Unity.Editor.Generator
         private static readonly XNamespace UiNs = "UnityEngine.UIElements";
         private static readonly XNamespace UieNs = "UnityEditor.UIElements";
 
+        private class Utf8StringWriter : StringWriter
+        {
+            public override Encoding Encoding => new UTF8Encoding(false);
+        }
+
         public static string GenerateUXML(IRNode rootNode, string ussRelativePath)
         {
             if (rootNode == null) return string.Empty;
 
-            var doc = new XDocument(new XDeclaration("1.0", "utf-8", "yes"));
+            var doc = new XDocument(new XDeclaration("1.0", "utf-8", null));
             var rootUxml = new XElement(UiNs + "UXML",
                 new XAttribute(XNamespace.Xmlns + "ui", UiNs.NamespaceName),
                 new XAttribute(XNamespace.Xmlns + "uie", UieNs.NamespaceName)
@@ -36,9 +43,19 @@ namespace Figma2Unity.Editor.Generator
 
             doc.Add(rootUxml);
 
-            using (var stringWriter = new StringWriter())
+            var settings = new XmlWriterSettings
             {
-                doc.Save(stringWriter);
+                Encoding = new UTF8Encoding(false),
+                Indent = true,
+                OmitXmlDeclaration = false
+            };
+
+            using (var stringWriter = new Utf8StringWriter())
+            {
+                using (var xmlWriter = XmlWriter.Create(stringWriter, settings))
+                {
+                    doc.Save(xmlWriter);
+                }
                 return stringWriter.ToString();
             }
         }

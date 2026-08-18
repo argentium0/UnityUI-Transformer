@@ -21,6 +21,7 @@ coverage/
 # ------------------------------------------------------------------------------
 # Section 2: Unity Development Engine & Editor Caches (Tier 3 Unity Package)
 # ------------------------------------------------------------------------------
+Figma2UnityTest/
 **/[Ll]ibrary/
 **/[Tt]emp/
 **/[Oo]bj/

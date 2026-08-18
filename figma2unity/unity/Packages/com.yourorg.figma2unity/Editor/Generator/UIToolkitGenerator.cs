@@ -39,11 +39,13 @@ namespace Figma2Unity.Editor.Generator
 
             var result = new GenerationResult();
 
+            var utf8Encoding = new System.Text.UTF8Encoding(false);
+
             // 1. Generate single shared USS Stylesheet for the package
             string ussContent = USSStyleGenerator.GenerateUSS(document, packageName);
             string ussFileName = $"{packageName}.uss";
             string ussFullPath = Path.Combine(destinationFolder, ussFileName);
-            File.WriteAllText(ussFullPath, ussContent);
+            File.WriteAllText(ussFullPath, ussContent, utf8Encoding);
             result.USSPath = ussFullPath.Replace('\\', '/');
 
             // 2. Generate one UXML file per top-level root IR node
@@ -57,7 +59,7 @@ namespace Figma2Unity.Editor.Generator
                 string relativeUssPath = result.USSPath;
 
                 string uxmlContent = UXMLTreeGenerator.GenerateUXML(rootNode, relativeUssPath);
-                File.WriteAllText(uxmlFullPath, uxmlContent);
+                File.WriteAllText(uxmlFullPath, uxmlContent, utf8Encoding);
                 result.UXMLPaths.Add(uxmlFullPath.Replace('\\', '/'));
             }
 
