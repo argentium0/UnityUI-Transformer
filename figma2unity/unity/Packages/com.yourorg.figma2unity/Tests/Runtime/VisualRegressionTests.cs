@@ -4,6 +4,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using UnityEngine.UIElements;
+using Figma2Unity.Editor.VisualRegression;
 
 namespace Figma2Unity.Tests.Runtime
 {
@@ -12,6 +13,8 @@ namespace Figma2Unity.Tests.Runtime
         private GameObject _testGameObject;
         private UIDocument _uiDocument;
         private Camera _testCamera;
+
+        public const float MaxDiffThresholdPercent = 2.0f;
 
         [SetUp]
         public void SetUp()
@@ -45,7 +48,7 @@ namespace Figma2Unity.Tests.Runtime
         }
 
         [UnityTest]
-        public IEnumerator RenderUXMLScreen_CapturesScreenshotPNG()
+        public IEnumerator RenderUXMLScreen_CapturesScreenshotAndComparesPixels()
         {
             // Load target generated VisualTreeAsset (UXML) or instantiate test tree
             var uxmlAsset = Resources.Load<VisualTreeAsset>("TestScreen");
@@ -60,7 +63,7 @@ namespace Figma2Unity.Tests.Runtime
             yield return null;
             yield return new WaitForEndOfFrame();
 
-            // Prepare temporary directory for screenshot artifact
+            // Prepare temporary directory for screenshot artifact & diff heatmap
             string outputFolder = Path.Combine(Application.temporaryCachePath, "Figma2UnityVisualRegression");
             if (!Directory.Exists(outputFolder))
             {
@@ -68,6 +71,7 @@ namespace Figma2Unity.Tests.Runtime
             }
 
             string screenshotPath = Path.Combine(outputFolder, "RenderedUI_Capture.png");
+            string diffOutputPath = Path.Combine(outputFolder, "RenderedUI_Diff.png");
 
             // Capture screenshot of rendered scene
             ScreenCapture.CaptureScreenshot(screenshotPath);
@@ -77,7 +81,24 @@ namespace Figma2Unity.Tests.Runtime
 
             Assert.IsNotNull(_uiDocument);
             Assert.IsNotNull(_uiDocument.rootVisualElement);
-            Assert.IsTrue(Directory.Exists(outputFolder));
+
+            // Look for imported Figma reference export image if available
+            string referencePath = Path.Combine(Application.dataPath, "Figma2UnityImports", "SyncPackage", "exports", "images", "reference.png");
+
+            // If reference PNG exists, compare captured screenshot with reference
+            if (File.Exists(screenshotPath) && File.Exists(referencePath))
+            {
+                ImageDiffResult diffResult = ImageDiffUtility.CompareImages(screenshotPath, referencePath, MaxDiffThresholdPercent, diffOutputPath);
+
+                if (!diffResult.Passed)
+                {
+                    Assert.Fail(diffResult.ErrorMessage);
+                }
+            }
+            else
+            {
+                Assert.IsTrue(Directory.Exists(outputFolder));
+            }
         }
     }
 }
