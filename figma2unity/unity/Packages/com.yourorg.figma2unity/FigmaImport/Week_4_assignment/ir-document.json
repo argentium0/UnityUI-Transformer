@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0.0",
   "metadata": {
-    "exportedAt": "2026-08-18T19:16:19.627Z",
+    "exportedAt": "2026-08-18T19:25:57.157Z",
     "figmaFileName": "Week_4_assignment",
     "generatorVersion": "1.0.0"
   },
@@ -97,6 +97,7 @@
         "width": 390,
         "height": 844
       },
+      "layoutPositioning": "AUTO",
       "fills": [
         {
           "type": "IMAGE"
@@ -155,6 +156,7 @@
             "width": 350,
             "height": 178
           },
+          "layoutPositioning": "AUTO",
           "fills": [],
           "strokes": [],
           "cornerRadius": {
@@ -211,6 +213,7 @@
                 "width": 338,
                 "height": 176
               },
+              "layoutPositioning": "AUTO",
               "fills": [
                 {
                   "type": "IMAGE"
@@ -258,6 +261,7 @@
             "width": 273,
             "height": 216
           },
+          "layoutPositioning": "AUTO",
           "fills": [],
           "strokes": [],
           "cornerRadius": {
@@ -281,6 +285,7 @@
                 "width": 273,
                 "height": 60
               },
+              "layoutPositioning": "AUTO",
               "fills": [
                 {
                   "type": "SOLID",
@@ -346,6 +351,7 @@
                     "width": 25,
                     "height": 19
                   },
+                  "layoutPositioning": "AUTO",
                   "fills": [],
                   "strokes": [
                     {
@@ -382,6 +388,7 @@
                     "width": 100,
                     "height": 30
                   },
+                  "layoutPositioning": "AUTO",
                   "fills": [
                     {
                       "type": "SOLID",
@@ -438,6 +445,7 @@
                 "width": 273,
                 "height": 60
               },
+              "layoutPositioning": "AUTO",
               "fills": [
                 {
                   "type": "SOLID",
@@ -503,6 +511,7 @@
                     "width": 24.270244598388672,
                     "height": 25.336040496826172
                   },
+                  "layoutPositioning": "AUTO",
                   "fills": [],
                   "strokes": [],
                   "cornerRadius": {
@@ -526,6 +535,7 @@
                         "width": 5.333333492279053,
                         "height": 5.333333492279053
                       },
+                      "layoutPositioning": "AUTO",
                       "fills": [],
                       "strokes": [
                         {
@@ -562,6 +572,7 @@
                         "width": 24.270244598388672,
                         "height": 25.336040496826172
                       },
+                      "layoutPositioning": "AUTO",
                       "fills": [
                         {
                           "tokenId": "color-S:f8e5806a1d9c0769a941181290d874ae49d4794c,",
@@ -600,6 +611,7 @@
                     "width": 147,
                     "height": 30
                   },
+                  "layoutPositioning": "AUTO",
                   "fills": [
                     {
                       "type": "SOLID",
@@ -656,6 +668,7 @@
                 "width": 273,
                 "height": 60
               },
+              "layoutPositioning": "AUTO",
               "fills": [
                 {
                   "type": "SOLID",
@@ -721,6 +734,7 @@
                     "width": 25,
                     "height": 25
                   },
+                  "layoutPositioning": "AUTO",
                   "fills": [],
                   "strokes": [],
                   "cornerRadius": {
@@ -761,6 +775,7 @@
                         "width": 18.447101593017578,
                         "height": 18.75
                       },
+                      "layoutPositioning": "AUTO",
                       "fills": [],
                       "strokes": [],
                       "cornerRadius": {
@@ -784,6 +799,7 @@
                             "width": 3.8438971042633057,
                             "height": 4.363225936889648
                           },
+                          "layoutPositioning": "AUTO",
                           "fills": [
                             {
                               "tokenId": "color-S:f8e5806a1d9c0769a941181290d874ae49d4794c,",
@@ -820,6 +836,7 @@
                             "width": 3.86310076713562,
                             "height": 4.386270999908447
                           },
+                          "layoutPositioning": "AUTO",
                           "fills": [
                             {
                               "tokenId": "color-S:f8e5806a1d9c0769a941181290d874ae49d4794c,",
@@ -856,6 +873,7 @@
                             "width": 17.5,
                             "height": 18.75
                           },
+                          "layoutPositioning": "AUTO",
                           "fills": [
                             {
                               "tokenId": "color-S:f8e5806a1d9c0769a941181290d874ae49d4794c,",
@@ -892,6 +910,7 @@
                             "width": 12.5,
                             "height": 18.75
                           },
+                          "layoutPositioning": "AUTO",
                           "fills": [
                             {
                               "tokenId": "color-S:f8e5806a1d9c0769a941181290d874ae49d4794c,",
@@ -932,6 +951,7 @@
                     "width": 68,
                     "height": 30
                   },
+                  "layoutPositioning": "AUTO",
                   "fills": [
                     {
                       "type": "SOLID",
@@ -990,6 +1010,7 @@
             "width": 28,
             "height": 27
           },
+          "layoutPositioning": "AUTO",
           "fills": [],
           "strokes": [],
           "cornerRadius": {
@@ -1031,6 +1052,7 @@
             "width": 143,
             "height": 26
           },
+          "layoutPositioning": "ABSOLUTE",
           "fills": [],
           "strokes": [],
           "cornerRadius": {
@@ -1071,6 +1093,7 @@
                 "width": 143,
                 "height": 26
               },
+              "layoutPositioning": "ABSOLUTE",
               "fills": [
                 {
                   "type": "SOLID",
@@ -1125,6 +1148,7 @@
                 "width": 5,
                 "height": 5
               },
+              "layoutPositioning": "ABSOLUTE",
               "fills": [
                 {
                   "type": "SOLID",
@@ -1164,6 +1188,7 @@
         "width": 390,
         "height": 0
       },
+      "layoutPositioning": "AUTO",
       "fills": [],
       "strokes": [
         {

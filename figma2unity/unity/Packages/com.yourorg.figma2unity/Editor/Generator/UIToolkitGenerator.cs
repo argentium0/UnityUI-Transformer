@@ -47,8 +47,15 @@ namespace Figma2Unity.Editor.Generator
             string ussContent = GenerateUSS(document, packageName);
             string ussFileName = $"{packageName}.uss";
             string ussFullPath = Path.Combine(destinationFolder, ussFileName);
+
+            // Write in-place without File.Delete to preserve Unity UI Builder meta GUIDs
             File.WriteAllText(ussFullPath, ussContent, utf8Encoding);
-            result.USSPath = ussFullPath.Replace('\\', '/');
+            string ussUnityPath = ussFullPath.Replace('\\', '/');
+            result.USSPath = ussUnityPath;
+
+#if UNITY_EDITOR
+            AssetDatabase.ImportAsset(ussUnityPath, ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
+#endif
 
             // 2. Generate one UXML file per top-level root IR node
             for (int i = 0; i < document.rootNodes.Count; i++)
@@ -59,7 +66,6 @@ namespace Figma2Unity.Editor.Generator
                 string uxmlFullPath = Path.Combine(destinationFolder, uxmlFileName);
 
                 string relativeUssPath = ussFileName;
-
                 string uxmlContent = UXMLTreeGenerator.GenerateUXML(rootNode, relativeUssPath);
 
                 // Omit XML declaration if present so Unity's UI Builder parses the UXML file cleanly without utf-16 errors
@@ -72,14 +78,20 @@ namespace Figma2Unity.Editor.Generator
                     }
                 }
 
+                // Write in-place without File.Delete to preserve Unity UI Builder meta GUIDs
                 File.WriteAllText(uxmlFullPath, uxmlContent, utf8Encoding);
-                result.UXMLPaths.Add(uxmlFullPath.Replace('\\', '/'));
+                string uxmlUnityPath = uxmlFullPath.Replace('\\', '/');
+                result.UXMLPaths.Add(uxmlUnityPath);
+
+#if UNITY_EDITOR
+                AssetDatabase.ImportAsset(uxmlUnityPath, ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
+#endif
             }
 
             result.Success = true;
 
 #if UNITY_EDITOR
-            AssetDatabase.Refresh();
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
 #endif
 
             return result;
@@ -183,8 +195,10 @@ namespace Figma2Unity.Editor.Generator
                 if (isRoot)
                 {
                     sb.AppendLine("    position: relative;");
-                    // Prevent Unity from squishing the root frame to fit the preview window
                     sb.AppendLine("    flex-shrink: 0;");
+                    sb.AppendLine("    width: 100%;");
+                    sb.AppendLine("    height: 100%;");
+                    sb.AppendLine("    overflow: hidden;");
                 }
                 else if (isInsideAutoLayoutParent && !isAbsolute)
                 {
@@ -206,7 +220,7 @@ namespace Figma2Unity.Editor.Generator
                     }
                 }
 
-                if (node.bounds != null)
+                if (!isRoot && node.bounds != null)
                 {
                     if (node.bounds.width > 0)
                     {
@@ -226,6 +240,8 @@ namespace Figma2Unity.Editor.Generator
                 bool isAutoLayoutContainer = node.autoLayout != null && !string.IsNullOrEmpty(node.autoLayout.layoutMode) && node.autoLayout.layoutMode != "NONE";
                 if (isAutoLayoutContainer)
                 {
+                    sb.AppendLine("    display: flex;");
+
                     if (node.autoLayout.layoutMode.Equals("HORIZONTAL", StringComparison.OrdinalIgnoreCase))
                     {
                         sb.AppendLine("    flex-direction: row;");
@@ -289,14 +305,14 @@ namespace Figma2Unity.Editor.Generator
                     }
                 }
 
-                // 2. IMAGE & VECTOR ASSET LINKING (background-image)
+                // 2. IMAGE & VECTOR ASSET LINKING (single-quoted project://database/ URLs)
                 bool isImageAsset = false;
                 string pkg = string.IsNullOrEmpty(packageName) ? "SyncPackage" : packageName;
 
                 if (node is ImageNode imgNode && !string.IsNullOrEmpty(imgNode.imageAssetRef))
                 {
                     string unityAssetUrl = $"project://database/Assets/Figma2UnityImports/{pkg}/{imgNode.imageAssetRef}";
-                    sb.AppendLine($"    background-image: url(\"{unityAssetUrl}\");");
+                    sb.AppendLine($"    background-image: url('{unityAssetUrl}');");
                     sb.AppendLine("    -unity-background-scale-mode: stretch-to-fill;");
                     sb.AppendLine("    background-color: transparent;");
                     isImageAsset = true;
@@ -304,7 +320,7 @@ namespace Figma2Unity.Editor.Generator
                 else if (node is VectorNode vecNode && !string.IsNullOrEmpty(vecNode.svgAssetRef))
                 {
                     string unityAssetUrl = $"project://database/Assets/Figma2UnityImports/{pkg}/{vecNode.svgAssetRef}";
-                    sb.AppendLine($"    background-image: url(\"{unityAssetUrl}\");");
+                    sb.AppendLine($"    background-image: url('{unityAssetUrl}');");
                     sb.AppendLine("    -unity-background-scale-mode: scale-to-fit;");
                     sb.AppendLine("    background-color: transparent;");
                     isImageAsset = true;
@@ -445,9 +461,12 @@ namespace Figma2Unity.Editor.Generator
                     sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "    opacity: {0:F2};", node.opacity));
                 }
 
-                // 6. TYPOGRAPHY FOR TEXT NODES
+                // 6. TYPOGRAPHY & TEXT WRAPPING FOR TEXT NODES
                 if (node is TextNode textNode)
                 {
+                    sb.AppendLine("    white-space: normal;");
+                    sb.AppendLine("    -unity-text-wrap: wrap;");
+
                     float? fontSize = textNode.fontSize;
                     string matchedFontSizeVar = null;
 

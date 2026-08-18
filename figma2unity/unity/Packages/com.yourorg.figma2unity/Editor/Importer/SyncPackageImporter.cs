@@ -149,13 +149,19 @@ namespace Figma2Unity.Editor.Importer
                     CopyDirectoryRecursive(tempExportsDir, destExportsDir);
                 }
 
-                AssetDatabase.Refresh();
-
-                // 6. Configure TextureImporter for imported PNG raster assets
+                // 6. Synchronously Refresh & Configure TextureImporter for raw raster assets
+                AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
                 ConfigureRasterAssets(destFolder);
 
-                // 7. Generate UI hierarchy (UI Toolkit UXML/USS or uGUI Prefabs based on target)
+                // 7. Generate ScriptableObject Token Assets
                 string generatedFolder = Path.Combine("Assets", "Figma2Unity", "Generated", packageName);
+                TokenAssetGenerator.GenerateTokenAssets(document, generatedFolder);
+
+                // 8. Match or generate TextMeshPro font assets for text nodes
+                string fontsFolder = Path.Combine("Assets", "Figma2Unity", "Generated", "Fonts");
+                ResolveTextNodeFonts(document, fontsFolder);
+
+                // 9. Synchronously generate UI hierarchy (UI Toolkit UXML/USS or uGUI Prefabs based on target)
                 if (target == UIExporterTarget.uGUI_Prefab)
                 {
                     UGUIGenerator.Generate(document, generatedFolder, packageName);
@@ -165,16 +171,11 @@ namespace Figma2Unity.Editor.Importer
                     UIToolkitGenerator.Generate(document, generatedFolder, packageName);
                 }
 
-                // 8. Generate ScriptableObject Token Assets (ColorPaletteSO, TypeRampSO, SpacingScaleSO, EffectStyleSO)
-                TokenAssetGenerator.GenerateTokenAssets(document, generatedFolder);
-
-                // 9. Match or generate TextMeshPro font assets for text nodes
-                string fontsFolder = Path.Combine("Assets", "Figma2Unity", "Generated", "Fonts");
-                ResolveTextNodeFonts(document, fontsFolder);
-
                 // 10. Generate Markdown & HTML Import Reports
                 var reportData = Figma2Unity.Editor.Reporting.FigmaImportLogger.EndSession();
                 var reportResult = Figma2Unity.Editor.Reporting.ReportGenerator.GenerateReports(reportData, generatedFolder);
+
+                AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
 
                 return new ImportResult
                 {
@@ -218,10 +219,9 @@ namespace Figma2Unity.Editor.Importer
 
             string[] parts = version.Split('.');
             string major = parts[0];
-
             if (major != ExpectedMajorVersion)
             {
-                errorMessage = $"Incompatible IR Schema version '{version}'. Importer expects major version {ExpectedMajorVersion}.x.x per FR2.";
+                errorMessage = $"Schema major version mismatch! Package major version is '{major}', but importer expects '{ExpectedMajorVersion}'.";
                 return false;
             }
 
@@ -244,7 +244,9 @@ namespace Figma2Unity.Editor.Importer
                     importer.textureType = TextureImporterType.Sprite;
                     importer.spriteImportMode = SpriteImportMode.Single;
                     importer.spritePivot = new Vector2(0.5f, 0.5f);
+                    importer.alphaIsTransparency = true;
                     importer.SaveAndReimport();
+                    AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
                 }
             }
         }
