@@ -125,7 +125,8 @@ namespace Figma2Unity.Editor.Importer
                 TokenAssetGenerator.GenerateTokenAssets(document, generatedFolder);
 
                 // 9. Match or generate TextMeshPro font assets for text nodes
-                ResolveTextNodeFonts(document);
+                string fontsFolder = Path.Combine("Assets", "Figma2Unity", "Generated", "Fonts");
+                ResolveTextNodeFonts(document, fontsFolder);
 
                 return new ImportResult
                 {
@@ -198,36 +199,38 @@ namespace Figma2Unity.Editor.Importer
             }
         }
 
-        private static void ResolveTextNodeFonts(IRDocument document)
+        private static void ResolveTextNodeFonts(IRDocument document, string fontsFolder)
         {
             if (document?.rootNodes == null) return;
 
+            Figma2Unity.Editor.Fonts.FontResolver.ClearReport();
+
             foreach (var rootNode in document.rootNodes)
             {
-                ResolveNodeFontsRecursive(rootNode);
+                ResolveNodeFontsRecursive(rootNode, fontsFolder);
             }
         }
 
-        private static void ResolveNodeFontsRecursive(IRNode node)
+        private static void ResolveNodeFontsRecursive(IRNode node, string fontsFolder)
         {
             if (node == null) return;
 
             if (node is TextNode textNode && !string.IsNullOrEmpty(textNode.fontFamily))
             {
-                Figma2Unity.Editor.Fonts.TMPFontMatcher.MatchOrGenerateFont(textNode.fontFamily, textNode.fontWeight);
+                Figma2Unity.Editor.Fonts.FontResolver.ResolveFontForTextNode(textNode, fontsFolder);
             }
 
             if (node is FrameNode frameNode && frameNode.children != null)
             {
-                foreach (var child in frameNode.children) ResolveNodeFontsRecursive(child);
+                foreach (var child in frameNode.children) ResolveNodeFontsRecursive(child, fontsFolder);
             }
             else if (node is GroupNode groupNode && groupNode.children != null)
             {
-                foreach (var child in groupNode.children) ResolveNodeFontsRecursive(child);
+                foreach (var child in groupNode.children) ResolveNodeFontsRecursive(child, fontsFolder);
             }
             else if (node is ComponentInstanceNode compNode && compNode.children != null)
             {
-                foreach (var child in compNode.children) ResolveNodeFontsRecursive(child);
+                foreach (var child in compNode.children) ResolveNodeFontsRecursive(child, fontsFolder);
             }
         }
 

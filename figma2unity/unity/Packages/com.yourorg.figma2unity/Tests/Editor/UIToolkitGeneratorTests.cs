@@ -333,5 +333,34 @@ namespace Figma2Unity.Tests.Editor
             Assert.IsTrue(result.UsedFallback || !result.Success);
             Assert.IsNotNull(result.LogMessage);
         }
+
+        [Test]
+        public void FontResolver_ResolveFontForTextNode_CollectsStructuredMissingFontReport()
+        {
+            Figma2Unity.Editor.Fonts.FontResolver.ClearReport();
+
+            var textNode = new TextNode
+            {
+                id = "node-101",
+                name = "SubtitleLabel",
+                type = "TEXT",
+                fontFamily = "UnknownFontFamilyCustom",
+                fontWeight = 600f
+            };
+
+            var result = Figma2Unity.Editor.Fonts.FontResolver.ResolveFontForTextNode(textNode, null);
+
+            Assert.IsNotNull(result);
+            Assert.IsTrue(result.UsedFallback || result.Success);
+            Assert.Contains("[Figma2Unity] Missing Font: 'UnknownFontFamilyCustom' (600) on node 'SubtitleLabel' (ID: node-101)", result.LogMessage);
+
+            var report = Figma2Unity.Editor.Fonts.FontResolver.MissingFontsReport;
+            Assert.IsNotNull(report);
+            Assert.AreEqual(1, report.Count);
+            Assert.AreEqual("UnknownFontFamilyCustom", report[0].FontFamily);
+            Assert.AreEqual(600f, report[0].FontWeight);
+            Assert.AreEqual("SubtitleLabel", report[0].NodeName);
+            Assert.AreEqual("node-101", report[0].NodeId);
+        }
     }
 }
