@@ -249,7 +249,7 @@ namespace Figma2Unity.Editor.Importer
             }
         }
 
-        private static void ResolveTextNodeFonts(IRDocument document, string fontsFolder)
+        public static void ResolveTextNodeFonts(IRDocument document, string fontsFolder)
         {
             if (document?.rootNodes == null) return;
 
