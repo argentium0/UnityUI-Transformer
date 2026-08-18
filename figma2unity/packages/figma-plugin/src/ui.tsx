@@ -18,46 +18,86 @@ function App() {
   const [downloadedFile, setDownloadedFile] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const [syncMode, setSyncMode] = useState<'ZIP' | 'LIVE'>('ZIP');
+  const [syncedStatus, setSyncedStatus] = useState<string | null>(null);
+
   useEffect(() => {
-    window.onmessage = (event) => {
+    window.onmessage = async (event) => {
       const msg = event.data.pluginMessage;
       if (!msg) return;
 
       if (msg.type === 'EXPORT_DATA') {
         try {
-          const assets: ExportedAsset[] = (msg.assets || []).map((a: any) => ({
-            path: a.path,
-            data: new Uint8Array(a.data),
-            mimeType: a.mimeType,
-          }));
+          if (syncMode === 'LIVE') {
+            // Live mode: POST directly to Fastify bridge server on localhost:3000
+            const assetsPayload = (msg.assets || []).map((a: any) => {
+              const uint8 = new Uint8Array(a.data);
+              let binary = '';
+              for (let i = 0; i < uint8.byteLength; i++) {
+                binary += String.fromCharCode(uint8[i]);
+              }
+              const base64 = btoa(binary);
+              return {
+                path: a.path,
+                data: base64,
+              };
+            });
 
-          // Create .f2u.zip archive inside the UI iframe browser environment
-          const zipBytes = ZipPackager.createF2uZip(msg.document, assets);
+            const packageName = msg.fileName ? msg.fileName.replace(/\.f2u\.zip$/i, '') : 'FigmaSyncPackage';
 
-          // Trigger browser Blob download of the .f2u.zip archive
-          const blob = new Blob([zipBytes], { type: 'application/zip' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = msg.fileName;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
+            const res = await fetch('http://localhost:3000/sync', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                packageName,
+                document: msg.document,
+                assets: assetsPayload,
+              }),
+            });
 
-          setLoading(false);
-          setSummary(msg.summary);
-          setDownloadedFile(msg.fileName);
+            const resData = await res.json();
+            if (res.ok && resData.success) {
+              setLoading(false);
+              setSummary(msg.summary);
+              setSyncedStatus(`Synced ${resData.filesWritten} files directly to Unity project at ${resData.outputPath}`);
+            } else {
+              throw new Error(resData.message || 'Server error');
+            }
+          } else {
+            // Zip mode: Create .f2u.zip archive inside the UI iframe browser environment
+            const assets: ExportedAsset[] = (msg.assets || []).map((a: any) => ({
+              path: a.path,
+              data: new Uint8Array(a.data),
+              mimeType: a.mimeType,
+            }));
+
+            const zipBytes = ZipPackager.createF2uZip(msg.document, assets);
+
+            // Trigger browser Blob download of the .f2u.zip archive
+            const blob = new Blob([zipBytes], { type: 'application/zip' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = msg.fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            setLoading(false);
+            setSummary(msg.summary);
+            setDownloadedFile(msg.fileName);
+          }
         } catch (err: any) {
           setLoading(false);
-          setError(`Failed to create zip package: ${err?.message || String(err)}`);
+          setError(`Failed sync operation: ${err?.message || String(err)}`);
         }
       } else if (msg.type === 'TRAVERSAL_ERROR') {
         setLoading(false);
         setError(msg.error);
       }
     };
-  }, []);
+  }, [syncMode]);
 
   const handleSync = () => {
     setLoading(true);
@@ -69,9 +109,34 @@ function App() {
   return (
     <div style={{ fontFamily: 'sans-serif', padding: 16, background: '#1e1e1e', color: '#fff', boxSizing: 'border-box' }}>
       <h2 style={{ margin: '0 0 8px 0', fontSize: 18, color: '#0d99ff' }}>Figma2Unity Importer</h2>
-      <p style={{ fontSize: 12, color: '#aaa', margin: '0 0 16px 0' }}>
-        Export design selection to <code>.f2u.zip</code> bundle containing IR JSON document and assets.
+      <p style={{ fontSize: 12, color: '#aaa', margin: '0 0 12px 0' }}>
+        Export design selection to IR JSON document and assets.
       </p>
+
+      <div style={{ marginBottom: 16, fontSize: 12 }}>
+        <label style={{ marginRight: 16, cursor: 'pointer' }}>
+          <input
+            type="radio"
+            name="syncMode"
+            value="ZIP"
+            checked={syncMode === 'ZIP'}
+            onChange={() => setSyncMode('ZIP')}
+            style={{ marginRight: 6 }}
+          />
+          Zip Download Mode
+        </label>
+        <label style={{ cursor: 'pointer' }}>
+          <input
+            type="radio"
+            name="syncMode"
+            value="LIVE"
+            checked={syncMode === 'LIVE'}
+            onChange={() => setSyncMode('LIVE')}
+            style={{ marginRight: 6 }}
+          />
+          Live Localhost Mode
+        </label>
+      </div>
 
       <button
         id="sync-button"
@@ -88,12 +153,18 @@ function App() {
           cursor: loading ? 'not-allowed' : 'pointer',
         }}
       >
-        {loading ? 'Exporting Assets & Packing Zip...' : 'Sync Selection'}
+        {loading ? (syncMode === 'LIVE' ? 'POSTing to localhost:3000...' : 'Packing Zip...') : (syncMode === 'LIVE' ? 'Sync Live to Localhost' : 'Sync & Download Zip')}
       </button>
 
       {downloadedFile && (
         <div style={{ marginTop: 12, padding: 8, background: '#1b3823', border: '1px solid #4caf50', borderRadius: 6, fontSize: 12, color: '#81c784' }}>
           ✓ Downloaded <strong>{downloadedFile}</strong>
+        </div>
+      )}
+
+      {syncedStatus && (
+        <div style={{ marginTop: 12, padding: 8, background: '#1b3823', border: '1px solid #4caf50', borderRadius: 6, fontSize: 12, color: '#81c784' }}>
+          ✓ {syncedStatus}
         </div>
       )}
 
