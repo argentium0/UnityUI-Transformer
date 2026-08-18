@@ -13,8 +13,19 @@ namespace Figma2Unity.Editor.Importer
     {
         public const string ExpectedMajorVersion = "1";
 
-        [MenuItem("Figma2Unity/Import Sync Package...")]
+        [MenuItem("Figma2Unity/Import Sync Package (UI Toolkit)...")]
         public static void ImportSyncPackageMenu()
+        {
+            ExecuteImport(UIExporterTarget.UIToolkit_UXML);
+        }
+
+        [MenuItem("Figma2Unity/Import Sync Package (uGUI Prefab)...")]
+        public static void ImportSyncPackageUGUIMenu()
+        {
+            ExecuteImport(UIExporterTarget.uGUI_Prefab);
+        }
+
+        private static void ExecuteImport(UIExporterTarget target)
         {
             string zipPath = EditorUtility.OpenFilePanel("Select Figma2Unity Sync Package (.f2u.zip)", "", "zip");
             if (string.IsNullOrEmpty(zipPath))
@@ -24,7 +35,7 @@ namespace Figma2Unity.Editor.Importer
 
             try
             {
-                ImportResult result = ImportSyncPackage(zipPath);
+                ImportResult result = ImportSyncPackage(zipPath, null, target);
                 if (result.Success)
                 {
                     var report = result.ReportData;
@@ -33,7 +44,8 @@ namespace Figma2Unity.Editor.Importer
                     int rasterCount = report != null ? report.RasterizedNodes.Count : 0;
                     int totalNodes = report != null ? report.TotalNodesProcessed : (result.Document?.rootNodes?.Count ?? 0);
 
-                    string summaryText = $"Import Complete for '{result.Document.metadata?.figmaFileName ?? "Package"}'!\n\n" +
+                    string modeStr = target == UIExporterTarget.uGUI_Prefab ? "uGUI Prefab" : "UI Toolkit";
+                    string summaryText = $"Import Complete ({modeStr}) for '{result.Document.metadata?.figmaFileName ?? "Package"}'!\n\n" +
                                          $"Total Nodes Processed: {totalNodes}\n" +
                                          $"Rasterized Fallbacks: {rasterCount}\n" +
                                          $"Missing Fonts: {missingFontCount}\n" +
@@ -67,7 +79,7 @@ namespace Figma2Unity.Editor.Importer
             public Figma2Unity.Editor.Reporting.ReportGenerator.ReportResult ReportResult;
         }
 
-        public static ImportResult ImportSyncPackage(string zipFilePath, string customDestinationFolder = null)
+        public static ImportResult ImportSyncPackage(string zipFilePath, string customDestinationFolder = null, UIExporterTarget target = UIExporterTarget.UIToolkit_UXML)
         {
             if (!File.Exists(zipFilePath))
             {
@@ -142,9 +154,16 @@ namespace Figma2Unity.Editor.Importer
                 // 6. Configure TextureImporter for imported PNG raster assets
                 ConfigureRasterAssets(destFolder);
 
-                // 7. Generate UI Toolkit UXML & USS structures
+                // 7. Generate UI hierarchy (UI Toolkit UXML/USS or uGUI Prefabs based on target)
                 string generatedFolder = Path.Combine("Assets", "Figma2Unity", "Generated", packageName);
-                UIToolkitGenerator.Generate(document, generatedFolder, packageName);
+                if (target == UIExporterTarget.uGUI_Prefab)
+                {
+                    UGUIGenerator.Generate(document, generatedFolder, packageName);
+                }
+                else
+                {
+                    UIToolkitGenerator.Generate(document, generatedFolder, packageName);
+                }
 
                 // 8. Generate ScriptableObject Token Assets (ColorPaletteSO, TypeRampSO, SpacingScaleSO, EffectStyleSO)
                 TokenAssetGenerator.GenerateTokenAssets(document, generatedFolder);
