@@ -203,6 +203,72 @@ namespace Figma2Unity.Editor.Generator
                     }
                 }
 
+                // 1.5 AUTO-LAYOUT FLEXBOX PROPERTIES
+                if (node.autoLayout != null && !string.IsNullOrEmpty(node.autoLayout.layoutMode) && node.autoLayout.layoutMode != "NONE")
+                {
+                    if (node.autoLayout.layoutMode.Equals("HORIZONTAL", StringComparison.OrdinalIgnoreCase))
+                    {
+                        sb.AppendLine("    flex-direction: row;");
+                    }
+                    else if (node.autoLayout.layoutMode.Equals("VERTICAL", StringComparison.OrdinalIgnoreCase))
+                    {
+                        sb.AppendLine("    flex-direction: column;");
+                    }
+
+                    if (node.autoLayout.gap > 0)
+                    {
+                        sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "    gap: {0}px;", node.autoLayout.gap));
+                    }
+
+                    if (node.autoLayout.padding != null)
+                    {
+                        var pad = node.autoLayout.padding;
+                        if (pad.top > 0) sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "    padding-top: {0}px;", pad.top));
+                        if (pad.right > 0) sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "    padding-right: {0}px;", pad.right));
+                        if (pad.bottom > 0) sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "    padding-bottom: {0}px;", pad.bottom));
+                        if (pad.left > 0) sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "    padding-left: {0}px;", pad.left));
+                    }
+
+                    if (!string.IsNullOrEmpty(node.autoLayout.primaryAxisAlign))
+                    {
+                        switch (node.autoLayout.primaryAxisAlign.ToUpperInvariant())
+                        {
+                            case "MIN":
+                                sb.AppendLine("    justify-content: flex-start;");
+                                break;
+                            case "CENTER":
+                                sb.AppendLine("    justify-content: center;");
+                                break;
+                            case "MAX":
+                                sb.AppendLine("    justify-content: flex-end;");
+                                break;
+                            case "SPACE_BETWEEN":
+                                sb.AppendLine("    justify-content: space-between;");
+                                break;
+                        }
+                    }
+
+                    if (!string.IsNullOrEmpty(node.autoLayout.counterAxisAlign))
+                    {
+                        switch (node.autoLayout.counterAxisAlign.ToUpperInvariant())
+                        {
+                            case "MIN":
+                                sb.AppendLine("    align-items: flex-start;");
+                                break;
+                            case "CENTER":
+                                sb.AppendLine("    align-items: center;");
+                                break;
+                            case "MAX":
+                                sb.AppendLine("    align-items: flex-end;");
+                                break;
+                            case "STRETCH":
+                            case "BASELINE":
+                                sb.AppendLine("    align-items: stretch;");
+                                break;
+                        }
+                    }
+                }
+
                 // 2. FILLS & TRANSPARENT BACKGROUNDS
                 bool hasBgFill = false;
                 if (node.fills != null && node.fills.Count > 0)
