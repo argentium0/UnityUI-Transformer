@@ -146,6 +146,18 @@ namespace Figma2Unity.Editor.Generator
             // 1. RECTTRANSFORM MATH (Constraints & Positioning)
             ApplyRectTransformMath(rect, node, nodeX, nodeY, nodeW, nodeH, parentWidth, parentHeight);
 
+            // 1.5 CHILD LAYOUT CONSTRAINTS (LayoutElement for Fill Container / Flexible sizing)
+            if (node.autoLayout != null)
+            {
+                if (node.autoLayout.layoutGrow > 0 || node.autoLayout.layoutAlign == "STRETCH")
+                {
+                    LayoutElement le = go.GetComponent<LayoutElement>();
+                    if (le == null) le = go.AddComponent<LayoutElement>();
+                    le.flexibleWidth = 1f;
+                    le.flexibleHeight = 1f;
+                }
+            }
+
             // 2. AUTO-LAYOUT LAYOUTGROUP
             if (node.autoLayout != null && !string.IsNullOrEmpty(node.autoLayout.layoutMode) && node.autoLayout.layoutMode != "NONE")
             {
@@ -175,6 +187,16 @@ namespace Figma2Unity.Editor.Generator
             else
             {
                 ApplyImageComponent(go, node, document, false);
+            }
+
+            // 4. CORNER RADII & ELLIPSES HANDLING FOR UGUI IMAGE COMPONENTS
+            bool isEllipse = node is EllipseNode;
+            bool hasCornerRadius = node.cornerRadius != null && (node.cornerRadius.topLeft > 0 || node.cornerRadius.topRight > 0 || node.cornerRadius.bottomRight > 0 || node.cornerRadius.bottomLeft > 0);
+            if (isEllipse || hasCornerRadius)
+            {
+                string shapeType = isEllipse ? "Ellipse" : "CornerRadius";
+                FigmaImportLogger.LogValidationWarning("uGUI Shape Constraint", $"Node '{node.name}' (ID: {node.id}) has {shapeType} which requires a custom UI shader or 9-slice sprite fallback in uGUI.");
+                FigmaImportLogger.LogRasterizedNode(node.id, node.name, node.type, $"uGUI Image {shapeType} fallback requirement");
             }
 
             // Recurse children

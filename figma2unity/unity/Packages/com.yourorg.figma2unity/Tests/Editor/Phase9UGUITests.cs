@@ -43,6 +43,13 @@ namespace Figma2Unity.Tests.Editor
                             fontSize = 24f,
                             bounds = new Bounds { x = 20, y = 20, width = 300, height = 50 }
                         },
+                        new EllipseNode
+                        {
+                            id = "ugui-ellipse-1",
+                            name = "BadgeCircle",
+                            type = "ELLIPSE",
+                            bounds = new Bounds { x = 20, y = 190, width = 60, height = 60 }
+                        },
                         new UnsupportedNode
                         {
                             id = "ugui-unsup-1",
@@ -69,9 +76,12 @@ namespace Figma2Unity.Tests.Editor
                 Assert.IsTrue(result.Success);
 
                 Assert.IsNotNull(report);
-                Assert.IsTrue(report.TotalNodesProcessed >= 3); // Canvas root + 2 children
-                Assert.IsTrue(report.RasterizedNodes.Count >= 1);
-                Assert.AreEqual("Exotic3DNode", report.RasterizedNodes[0].NodeName);
+                Assert.IsTrue(report.TotalNodesProcessed >= 4); // Canvas root + 3 children
+                Assert.IsTrue(report.RasterizedNodes.Count >= 2);
+                Assert.IsTrue(report.ValidationWarnings.Count >= 1);
+                var shapeWarn = report.ValidationWarnings.Find(w => w.Category == "uGUI Shape Constraint");
+                Assert.IsNotNull(shapeWarn);
+                Assert.Contains("BadgeCircle", shapeWarn.Message);
             }
             finally
             {
