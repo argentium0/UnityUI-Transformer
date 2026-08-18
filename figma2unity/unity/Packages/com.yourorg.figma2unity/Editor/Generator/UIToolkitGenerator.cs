@@ -194,10 +194,12 @@ namespace Figma2Unity.Editor.Generator
 
                 if (isRoot)
                 {
-                    sb.AppendLine("    position: relative;");
+                    sb.AppendLine("    position: absolute;");
+                    sb.AppendLine("    left: 0;");
+                    sb.AppendLine("    top: 0;");
+                    sb.AppendLine("    right: 0;");
+                    sb.AppendLine("    bottom: 0;");
                     sb.AppendLine("    flex-shrink: 0;");
-                    sb.AppendLine("    width: 100%;");
-                    sb.AppendLine("    height: 100%;");
                     sb.AppendLine("    overflow: hidden;");
                 }
                 else if (isInsideAutoLayoutParent && !isAbsolute)
@@ -305,22 +307,38 @@ namespace Figma2Unity.Editor.Generator
                     }
                 }
 
-                // 2. IMAGE & VECTOR ASSET LINKING (single-quoted project://database/ URLs)
+                // 2. IMAGE & VECTOR ASSET LINKING (single-quoted project://database/ URLs with AssetPathToGUID validation)
                 bool isImageAsset = false;
                 string pkg = string.IsNullOrEmpty(packageName) ? "SyncPackage" : packageName;
 
                 if (node is ImageNode imgNode && !string.IsNullOrEmpty(imgNode.imageAssetRef))
                 {
-                    string unityAssetUrl = $"project://database/Assets/Figma2UnityImports/{pkg}/{imgNode.imageAssetRef}";
-                    sb.AppendLine($"    background-image: url('{unityAssetUrl}');");
+                    string relAssetPath = $"Assets/Figma2UnityImports/{pkg}/{imgNode.imageAssetRef}";
+                    string targetUrl = $"project://database/{relAssetPath}";
+#if UNITY_EDITOR
+                    string guid = AssetDatabase.AssetPathToGUID(relAssetPath);
+                    if (string.IsNullOrEmpty(guid))
+                    {
+                        Debug.LogWarning($"[UIToolkitGenerator] Asset path '{relAssetPath}' does not exist in AssetDatabase yet (GUID empty).");
+                    }
+#endif
+                    sb.AppendLine($"    background-image: url('{targetUrl}');");
                     sb.AppendLine("    -unity-background-scale-mode: stretch-to-fill;");
                     sb.AppendLine("    background-color: transparent;");
                     isImageAsset = true;
                 }
                 else if (node is VectorNode vecNode && !string.IsNullOrEmpty(vecNode.svgAssetRef))
                 {
-                    string unityAssetUrl = $"project://database/Assets/Figma2UnityImports/{pkg}/{vecNode.svgAssetRef}";
-                    sb.AppendLine($"    background-image: url('{unityAssetUrl}');");
+                    string relAssetPath = $"Assets/Figma2UnityImports/{pkg}/{vecNode.svgAssetRef}";
+                    string targetUrl = $"project://database/{relAssetPath}";
+#if UNITY_EDITOR
+                    string guid = AssetDatabase.AssetPathToGUID(relAssetPath);
+                    if (string.IsNullOrEmpty(guid))
+                    {
+                        Debug.LogWarning($"[UIToolkitGenerator] Asset path '{relAssetPath}' does not exist in AssetDatabase yet (GUID empty).");
+                    }
+#endif
+                    sb.AppendLine($"    background-image: url('{targetUrl}');");
                     sb.AppendLine("    -unity-background-scale-mode: scale-to-fit;");
                     sb.AppendLine("    background-color: transparent;");
                     isImageAsset = true;

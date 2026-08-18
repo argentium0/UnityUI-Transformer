@@ -62,9 +62,13 @@ export async function registerSyncRoute(fastify: FastifyInstance): Promise<void>
       }
     }
 
+    // 3. Write 0-byte sync.complete lock file to trigger C# background watcher safely
+    const completeLockPath = path.join(targetFolder, 'sync.complete');
+    fs.writeFileSync(completeLockPath, '', 'utf-8');
+
     return reply.status(200).send({
       success: true,
-      message: `Successfully synced package '${packageName}' to Unity project.`,
+      message: `Successfully synced package '${packageName}' to staging directory.`,
       outputPath: targetFolder,
       filesWritten,
     });

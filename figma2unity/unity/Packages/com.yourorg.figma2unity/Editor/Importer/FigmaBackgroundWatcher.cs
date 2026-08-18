@@ -25,44 +25,51 @@ namespace Figma2Unity.Editor.Importer
         {
             try
             {
-                string importFolderPath = Path.Combine(Application.dataPath, "FigmaImport");
-                if (!Directory.Exists(importFolderPath))
+                // Staging directory inside project root Temp folder (outside Assets/)
+                string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+                string stagingFolderPath = Path.Combine(projectRoot, "Temp", "Figma2UnitySync");
+
+                if (!Directory.Exists(stagingFolderPath))
                 {
-                    importFolderPath = Path.Combine(Application.dataPath, "Figma2UnityImports");
+                    Directory.CreateDirectory(stagingFolderPath);
                 }
 
-                if (!Directory.Exists(importFolderPath))
+                _watcher = new FileSystemWatcher(stagingFolderPath)
                 {
-                    Directory.CreateDirectory(importFolderPath);
-                }
-
-                _watcher = new FileSystemWatcher(importFolderPath)
-                {
-                    Filter = "ir-document.json",
+                    Filter = "sync.complete",
                     IncludeSubdirectories = true,
                     NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.CreationTime
                 };
 
-                _watcher.Created += OnFileChanged;
-                _watcher.Changed += OnFileChanged;
+                _watcher.Created += OnSyncCompleteDetected;
+                _watcher.Changed += OnSyncCompleteDetected;
                 _watcher.EnableRaisingEvents = true;
 
-                Debug.Log($"[Figma2Unity BackgroundWatcher] Active background watcher listening at '{importFolderPath}'");
+                Debug.Log($"[Figma2Unity BackgroundWatcher] Active staging watcher listening for 'sync.complete' at '{stagingFolderPath}'");
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"[Figma2Unity BackgroundWatcher] Unable to initialize background watcher: {ex.Message}");
+                Debug.LogWarning($"[Figma2Unity BackgroundWatcher] Unable to initialize staging watcher: {ex.Message}");
             }
         }
 
-        private static void OnFileChanged(object sender, FileSystemEventArgs e)
+        private static void OnSyncCompleteDetected(object sender, FileSystemEventArgs e)
         {
-            // Thread Safety: FileSystemWatcher events execute on a background worker thread.
-            // Safely dispatch AssetDatabase.Refresh() to the Unity Editor main thread via EditorApplication.delayCall.
+            string lockFilePath = e.FullPath;
+
+            // Thread Safety: FileSystemWatcher runs on a background thread.
+            // Safely dispatch the bulletproof import sequence to the main thread via EditorApplication.delayCall.
             EditorApplication.delayCall += () =>
             {
-                Debug.Log($"[Figma2Unity BackgroundWatcher] Detected background IR payload update at '{e.FullPath}'. Triggering AssetDatabase.Refresh()...");
-                AssetDatabase.Refresh();
+                try
+                {
+                    Debug.Log($"[Figma2Unity BackgroundWatcher] Detected 'sync.complete' at '{lockFilePath}'. Initiating bulletproof import sequence...");
+                    SyncPackageImporter.ProcessStagingPackageSync(lockFilePath);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"[Figma2Unity BackgroundWatcher] Error executing staging import: {ex.Message}\n{ex.StackTrace}");
+                }
             };
         }
 
@@ -81,11 +88,11 @@ namespace Figma2Unity.Editor.Importer
             if (_watcher != null)
             {
                 _watcher.EnableRaisingEvents = false;
-                _watcher.Created -= OnFileChanged;
-                _watcher.Changed -= OnFileChanged;
+                _watcher.Created -= OnSyncCompleteDetected;
+                _watcher.Changed -= OnSyncCompleteDetected;
                 _watcher.Dispose();
                 _watcher = null;
-                Debug.Log("[Figma2Unity BackgroundWatcher] Background watcher cleanly disposed.");
+                Debug.Log("[Figma2Unity BackgroundWatcher] Staging watcher cleanly disposed.");
             }
         }
     }

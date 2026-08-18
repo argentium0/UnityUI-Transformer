@@ -13,6 +13,99 @@ namespace Figma2Unity.Editor.Importer
     {
         public const string ExpectedMajorVersion = "1";
 
+        public static void ForceCloseUIBuilderWindows()
+        {
+#if UNITY_EDITOR
+            var windows = Resources.FindObjectsOfTypeAll<EditorWindow>();
+            foreach (var win in windows)
+            {
+                if (win == null) continue;
+                string typeName = win.GetType().Name;
+                if (typeName.Contains("BuilderPaneWindow") || typeName.Contains("UIBuilder") || typeName.Contains("BuilderWindow"))
+                {
+                    try
+                    {
+                        Debug.Log($"[Figma2Unity Importer] Force closing UI Builder window ({typeName}) to prevent MissingReferenceException.");
+                        win.Close();
+                    }
+                    catch
+                    {
+                        // Ignore window close exception
+                    }
+                }
+            }
+#endif
+        }
+
+        public static void ProcessStagingPackageSync(string lockFilePath)
+        {
+#if UNITY_EDITOR
+            if (!File.Exists(lockFilePath)) return;
+
+            string stagingPackageFolder = Path.GetDirectoryName(lockFilePath);
+            string packageName = Path.GetFileName(stagingPackageFolder);
+            if (string.IsNullOrEmpty(packageName)) packageName = "StagingPackage";
+
+            string irJsonPath = Path.Combine(stagingPackageFolder, "ir-document.json");
+            if (!File.Exists(irJsonPath)) return;
+
+            // 1. Force Close UI Builder Editor Windows physically to prevent MissingReferenceException
+            ForceCloseUIBuilderWindows();
+
+            // 2. Copy Assets from Temp/Figma2UnitySync/{packageName} into Assets/Figma2UnityImports/{packageName}
+            string destFolder = Path.Combine("Assets", "Figma2UnityImports", packageName);
+            if (!Directory.Exists(destFolder))
+            {
+                Directory.CreateDirectory(destFolder);
+            }
+
+            string stagingExportsDir = Path.Combine(stagingPackageFolder, "exports");
+            if (Directory.Exists(stagingExportsDir))
+            {
+                string destExportsDir = Path.Combine(destFolder, "exports");
+                CopyDirectoryRecursive(stagingExportsDir, destExportsDir);
+            }
+
+            // 3. First Refresh & Configure TextureImporters
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            ConfigureRasterAssets(destFolder);
+
+            // 4. Generate Layout: Parse JSON in memory
+            string jsonContent = File.ReadAllText(irJsonPath);
+            IRDocument document = ParseIRDocument(jsonContent);
+            if (document == null) return;
+
+            Figma2Unity.Editor.Reporting.FigmaImportLogger.BeginSession(packageName, document.schemaVersion);
+
+            string generatedFolder = Path.Combine("Assets", "Figma2Unity", "Generated", packageName);
+
+            // 5. Generate UXML & USS with AssetPathToGUID validation
+            UIToolkitGenerator.Generate(document, generatedFolder, packageName);
+            UGUIGenerator.Generate(document, generatedFolder, packageName);
+
+            TokenAssetGenerator.GenerateTokenAssets(document, generatedFolder);
+            string fontsFolder = Path.Combine("Assets", "Figma2Unity", "Generated", "Fonts");
+            ResolveTextNodeFonts(document, fontsFolder);
+
+            var reportData = Figma2Unity.Editor.Reporting.FigmaImportLogger.EndSession();
+            Figma2Unity.Editor.Reporting.ReportGenerator.GenerateReports(reportData, generatedFolder);
+
+            // 6. Final Refresh
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+
+            try
+            {
+                File.Delete(lockFilePath);
+            }
+            catch
+            {
+                // Ignore lock cleanup error
+            }
+
+            Debug.Log($"[Figma2Unity Importer] Bulletproof staging import complete for '{packageName}'!");
+#endif
+        }
+
         [MenuItem("Figma2Unity/Import Sync Package (UI Toolkit)...")]
         public static void ImportSyncPackageMenu()
         {
