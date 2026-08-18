@@ -50,7 +50,13 @@ export async function registerSyncRoute(fastify: FastifyInstance): Promise<void>
           fs.mkdirSync(parentDir, { recursive: true });
         }
 
-        const buffer = Buffer.from(asset.data, 'base64');
+        let base64Data = asset.data;
+        if (base64Data.includes(',')) {
+          base64Data = base64Data.split(',')[1];
+        }
+        base64Data = base64Data.replace(/\s/g, '');
+
+        const buffer = Buffer.from(base64Data, 'base64');
         fs.writeFileSync(assetFullPath, buffer);
         filesWritten++;
       }

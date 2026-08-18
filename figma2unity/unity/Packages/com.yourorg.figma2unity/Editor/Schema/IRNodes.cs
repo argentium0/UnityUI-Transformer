@@ -16,6 +16,7 @@ namespace Figma2Unity.Editor.Schema
         public float rotation { get; set; }
         public Bounds bounds { get; set; }
         public AutoLayout autoLayout { get; set; }
+        public string layoutPositioning { get; set; } = "AUTO";
         public Constraints constraints { get; set; }
         public List<Fill> fills { get; set; } = new List<Fill>();
         public List<Stroke> strokes { get; set; } = new List<Stroke>();

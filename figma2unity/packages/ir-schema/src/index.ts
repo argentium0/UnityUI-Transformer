@@ -142,6 +142,7 @@ const BaseNodeFields = {
   rotation: z.number().default(0),
   bounds: BoundsSchema,
   autoLayout: AutoLayoutSchema.optional(),
+  layoutPositioning: z.enum(['AUTO', 'ABSOLUTE']).default('AUTO'),
   constraints: ConstraintsSchema.optional(),
   fills: z.array(FillSchema).default([]),
   strokes: z.array(StrokeSchema).default([]),

@@ -152,15 +152,22 @@ namespace Figma2Unity.Editor.Generator
             {
                 foreach (var rootNode in document.rootNodes)
                 {
-                    // Pass true for isRoot on top-level frames
-                    GenerateNodeStylesRecursive(rootNode, sb, generatedClasses, document, true);
+                    // Pass true for isRoot on top-level frames, false for parentAutoLayout
+                    GenerateNodeStylesRecursive(rootNode, sb, generatedClasses, document, true, false, packageName);
                 }
             }
 
             return sb.ToString();
         }
 
-        private static void GenerateNodeStylesRecursive(IRNode node, StringBuilder sb, HashSet<string> generatedClasses, IRDocument document, bool isRoot)
+        private static void GenerateNodeStylesRecursive(
+            IRNode node,
+            StringBuilder sb,
+            HashSet<string> generatedClasses,
+            IRDocument document,
+            bool isRoot,
+            bool isInsideAutoLayoutParent,
+            string packageName)
         {
             if (node == null) return;
 
@@ -171,14 +178,26 @@ namespace Figma2Unity.Editor.Generator
                 sb.AppendLine($".{className} {{");
 
                 // 1. POSITIONING & BOUNDS
+                bool isAbsolute = (node.layoutPositioning == "ABSOLUTE");
+
                 if (isRoot)
                 {
                     sb.AppendLine("    position: relative;");
                     // Prevent Unity from squishing the root frame to fit the preview window
                     sb.AppendLine("    flex-shrink: 0;");
                 }
+                else if (isInsideAutoLayoutParent && !isAbsolute)
+                {
+                    // Child inside an Auto-Layout parent participating in flex flow
+                    sb.AppendLine("    position: relative;");
+                    if (node.autoLayout != null && node.autoLayout.layoutGrow > 0)
+                    {
+                        sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "    flex-grow: {0};", node.autoLayout.layoutGrow));
+                    }
+                }
                 else
                 {
+                    // Non-auto-layout child OR explicitly absolute-positioned child inside auto-layout
                     sb.AppendLine("    position: absolute;");
                     if (node.bounds != null)
                     {
@@ -203,8 +222,9 @@ namespace Figma2Unity.Editor.Generator
                     }
                 }
 
-                // 1.5 AUTO-LAYOUT FLEXBOX PROPERTIES
-                if (node.autoLayout != null && !string.IsNullOrEmpty(node.autoLayout.layoutMode) && node.autoLayout.layoutMode != "NONE")
+                // 1.5 AUTO-LAYOUT FLEXBOX PROPERTIES FOR CONTAINERS
+                bool isAutoLayoutContainer = node.autoLayout != null && !string.IsNullOrEmpty(node.autoLayout.layoutMode) && node.autoLayout.layoutMode != "NONE";
+                if (isAutoLayoutContainer)
                 {
                     if (node.autoLayout.layoutMode.Equals("HORIZONTAL", StringComparison.OrdinalIgnoreCase))
                     {
@@ -269,9 +289,30 @@ namespace Figma2Unity.Editor.Generator
                     }
                 }
 
-                // 2. FILLS & TRANSPARENT BACKGROUNDS
+                // 2. IMAGE & VECTOR ASSET LINKING (background-image)
+                bool isImageAsset = false;
+                string pkg = string.IsNullOrEmpty(packageName) ? "SyncPackage" : packageName;
+
+                if (node is ImageNode imgNode && !string.IsNullOrEmpty(imgNode.imageAssetRef))
+                {
+                    string unityAssetUrl = $"project://database/Assets/Figma2UnityImports/{pkg}/{imgNode.imageAssetRef}";
+                    sb.AppendLine($"    background-image: url(\"{unityAssetUrl}\");");
+                    sb.AppendLine("    -unity-background-scale-mode: stretch-to-fill;");
+                    sb.AppendLine("    background-color: transparent;");
+                    isImageAsset = true;
+                }
+                else if (node is VectorNode vecNode && !string.IsNullOrEmpty(vecNode.svgAssetRef))
+                {
+                    string unityAssetUrl = $"project://database/Assets/Figma2UnityImports/{pkg}/{vecNode.svgAssetRef}";
+                    sb.AppendLine($"    background-image: url(\"{unityAssetUrl}\");");
+                    sb.AppendLine("    -unity-background-scale-mode: scale-to-fit;");
+                    sb.AppendLine("    background-color: transparent;");
+                    isImageAsset = true;
+                }
+
+                // 2.5 FILLS & TRANSPARENT BACKGROUNDS FOR NON-IMAGE NODES
                 bool hasBgFill = false;
-                if (node.fills != null && node.fills.Count > 0)
+                if (!isImageAsset && node.fills != null && node.fills.Count > 0)
                 {
                     foreach (var fill in node.fills)
                     {
@@ -335,7 +376,7 @@ namespace Figma2Unity.Editor.Generator
                 }
 
                 // FORCE TEXT TRANSPARENCY & UNFILLED TRANSPARENCY
-                if (node is TextNode || !hasBgFill)
+                if (!isImageAsset && (node is TextNode || !hasBgFill))
                 {
                     sb.AppendLine("    background-color: transparent;");
                 }
@@ -463,33 +504,35 @@ namespace Figma2Unity.Editor.Generator
                 sb.AppendLine();
             }
 
-            // Recurse children
+            // Recurse children passing whether current node is an Auto-Layout container
+            bool currentIsAutoLayout = node.autoLayout != null && !string.IsNullOrEmpty(node.autoLayout.layoutMode) && node.autoLayout.layoutMode != "NONE";
+
             if (node is FrameNode frameNode && frameNode.children != null)
             {
                 foreach (var child in frameNode.children)
                 {
-                    GenerateNodeStylesRecursive(child, sb, generatedClasses, document, false);
+                    GenerateNodeStylesRecursive(child, sb, generatedClasses, document, false, currentIsAutoLayout, packageName);
                 }
             }
             else if (node is GroupNode groupNode && groupNode.children != null)
             {
                 foreach (var child in groupNode.children)
                 {
-                    GenerateNodeStylesRecursive(child, sb, generatedClasses, document, false);
+                    GenerateNodeStylesRecursive(child, sb, generatedClasses, document, false, currentIsAutoLayout, packageName);
                 }
             }
             else if (node is ComponentInstanceNode compNode && compNode.children != null)
             {
                 foreach (var child in compNode.children)
                 {
-                    GenerateNodeStylesRecursive(child, sb, generatedClasses, document, false);
+                    GenerateNodeStylesRecursive(child, sb, generatedClasses, document, false, currentIsAutoLayout, packageName);
                 }
             }
             else if (node is UnsupportedNode unsupNode && unsupNode.children != null)
             {
                 foreach (var child in unsupNode.children)
                 {
-                    GenerateNodeStylesRecursive(child, sb, generatedClasses, document, false);
+                    GenerateNodeStylesRecursive(child, sb, generatedClasses, document, false, currentIsAutoLayout, packageName);
                 }
             }
         }

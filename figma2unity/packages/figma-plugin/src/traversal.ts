@@ -314,6 +314,7 @@ export class NodeTraverser {
       opacity: 'opacity' in node ? (node as any).opacity : 1,
       rotation: 'rotation' in node ? (node as any).rotation : 0,
       bounds,
+      layoutPositioning: 'layoutPositioning' in node ? ((node as any).layoutPositioning as 'AUTO' | 'ABSOLUTE') || 'AUTO' : 'AUTO',
       fills,
       strokes,
       cornerRadius,
