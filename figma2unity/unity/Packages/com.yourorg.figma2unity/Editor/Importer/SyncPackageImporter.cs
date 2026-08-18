@@ -27,7 +27,27 @@ namespace Figma2Unity.Editor.Importer
                 ImportResult result = ImportSyncPackage(zipPath);
                 if (result.Success)
                 {
-                    EditorUtility.DisplayDialog("Figma2Unity Import", $"Successfully imported '{result.Document.metadata?.figmaFileName ?? "Package"}' with {result.Document.rootNodes.Count} root nodes.", "OK");
+                    var report = result.ReportData;
+                    int warnCount = report != null ? report.ValidationWarnings.Count : 0;
+                    int missingFontCount = report != null ? report.MissingFonts.Count : 0;
+                    int rasterCount = report != null ? report.RasterizedNodes.Count : 0;
+                    int totalNodes = report != null ? report.TotalNodesProcessed : (result.Document?.rootNodes?.Count ?? 0);
+
+                    string summaryText = $"Import Complete for '{result.Document.metadata?.figmaFileName ?? "Package"}'!\n\n" +
+                                         $"Total Nodes Processed: {totalNodes}\n" +
+                                         $"Rasterized Fallbacks: {rasterCount}\n" +
+                                         $"Missing Fonts: {missingFontCount}\n" +
+                                         $"Validation Warnings: {warnCount}";
+
+                    bool openReport = EditorUtility.DisplayDialog("Figma2Unity Import Complete", summaryText, "Open Report", "Close");
+                    if (openReport && result.ReportResult != null)
+                    {
+                        string openPath = !string.IsNullOrEmpty(result.ReportResult.HtmlPath) ? result.ReportResult.HtmlPath : result.ReportResult.MarkdownPath;
+                        if (!string.IsNullOrEmpty(openPath) && File.Exists(openPath))
+                        {
+                            Application.OpenURL("file://" + Path.GetFullPath(openPath));
+                        }
+                    }
                 }
             }
             catch (Exception ex)
@@ -43,6 +63,8 @@ namespace Figma2Unity.Editor.Importer
             public string ErrorMessage;
             public IRDocument Document;
             public string DestinationAssetFolder;
+            public Figma2Unity.Editor.Reporting.ImportReportData ReportData;
+            public Figma2Unity.Editor.Reporting.ReportGenerator.ReportResult ReportResult;
         }
 
         public static ImportResult ImportSyncPackage(string zipFilePath, string customDestinationFolder = null)
@@ -131,11 +153,17 @@ namespace Figma2Unity.Editor.Importer
                 string fontsFolder = Path.Combine("Assets", "Figma2Unity", "Generated", "Fonts");
                 ResolveTextNodeFonts(document, fontsFolder);
 
+                // 10. Generate Markdown & HTML Import Reports
+                var reportData = Figma2Unity.Editor.Reporting.FigmaImportLogger.EndSession();
+                var reportResult = Figma2Unity.Editor.Reporting.ReportGenerator.GenerateReports(reportData, generatedFolder);
+
                 return new ImportResult
                 {
                     Success = true,
                     Document = document,
-                    DestinationAssetFolder = destFolder
+                    DestinationAssetFolder = destFolder,
+                    ReportData = reportData,
+                    ReportResult = reportResult
                 };
             }
             finally
