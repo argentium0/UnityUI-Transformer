@@ -74,7 +74,7 @@ function App() {
             const zipBytes = ZipPackager.createF2uZip(msg.document, assets);
 
             // Trigger browser Blob download of the .f2u.zip archive
-            const blob = new Blob([zipBytes], { type: 'application/zip' });
+            const blob = new Blob([zipBytes.buffer as ArrayBuffer], { type: 'application/zip' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
