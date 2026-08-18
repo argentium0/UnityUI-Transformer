@@ -21,7 +21,7 @@ namespace Figma2Unity.Editor.Generator
         {
             if (rootNode == null) return string.Empty;
 
-            var doc = new XDocument(new XDeclaration("1.0", "utf-8", null));
+            var doc = new XDocument();
             var rootUxml = new XElement(UiNs + "UXML",
                 new XAttribute(XNamespace.Xmlns + "ui", UiNs.NamespaceName),
                 new XAttribute(XNamespace.Xmlns + "uie", UieNs.NamespaceName)
@@ -47,7 +47,7 @@ namespace Figma2Unity.Editor.Generator
             {
                 Encoding = new UTF8Encoding(false),
                 Indent = true,
-                OmitXmlDeclaration = false
+                OmitXmlDeclaration = true
             };
 
             using (var stringWriter = new Utf8StringWriter())

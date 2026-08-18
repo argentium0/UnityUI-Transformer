@@ -1,12 +1,8 @@
 {
-    "name": "com.yourorg.figma2unity.Editor",
-    "rootNamespace": "Figma2Unity.Editor",
-    "references": [
-        "com.yourorg.figma2unity"
-    ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "name": "com.yourorg.figma2unity",
+    "rootNamespace": "Figma2Unity",
+    "references": [],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,

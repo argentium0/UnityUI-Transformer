@@ -121,6 +121,12 @@ namespace Figma2Unity.Editor.Importer
                 string generatedFolder = Path.Combine("Assets", "Figma2Unity", "Generated", packageName);
                 UIToolkitGenerator.Generate(document, generatedFolder, packageName);
 
+                // 8. Generate ScriptableObject Token Assets (ColorPaletteSO, TypeRampSO, SpacingScaleSO, EffectStyleSO)
+                TokenAssetGenerator.GenerateTokenAssets(document, generatedFolder);
+
+                // 9. Match or generate TextMeshPro font assets for text nodes
+                ResolveTextNodeFonts(document);
+
                 return new ImportResult
                 {
                     Success = true,
@@ -189,6 +195,39 @@ namespace Figma2Unity.Editor.Importer
                     importer.spritePivot = new Vector2(0.5f, 0.5f);
                     importer.SaveAndReimport();
                 }
+            }
+        }
+
+        private static void ResolveTextNodeFonts(IRDocument document)
+        {
+            if (document?.rootNodes == null) return;
+
+            foreach (var rootNode in document.rootNodes)
+            {
+                ResolveNodeFontsRecursive(rootNode);
+            }
+        }
+
+        private static void ResolveNodeFontsRecursive(IRNode node)
+        {
+            if (node == null) return;
+
+            if (node is TextNode textNode && !string.IsNullOrEmpty(textNode.fontFamily))
+            {
+                Figma2Unity.Editor.Fonts.TMPFontMatcher.MatchOrGenerateFont(textNode.fontFamily, textNode.fontWeight);
+            }
+
+            if (node is FrameNode frameNode && frameNode.children != null)
+            {
+                foreach (var child in frameNode.children) ResolveNodeFontsRecursive(child);
+            }
+            else if (node is GroupNode groupNode && groupNode.children != null)
+            {
+                foreach (var child in groupNode.children) ResolveNodeFontsRecursive(child);
+            }
+            else if (node is ComponentInstanceNode compNode && compNode.children != null)
+            {
+                foreach (var child in compNode.children) ResolveNodeFontsRecursive(child);
             }
         }
 

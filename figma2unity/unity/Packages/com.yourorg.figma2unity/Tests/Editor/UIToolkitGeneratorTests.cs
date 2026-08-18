@@ -96,6 +96,8 @@ namespace Figma2Unity.Tests.Editor
             string uxml = UXMLTreeGenerator.GenerateUXML(frame, "Assets/Figma2Unity/Generated/TestPackage/TestPackage.uss");
 
             Assert.IsNotNull(uxml);
+            Assert.IsFalse(uxml.StartsWith("<?xml"), "Generated UXML should omit <?xml ... ?> declaration.");
+            Assert.IsFalse(uxml.Contains("utf-16"), "Generated UXML should not contain utf-16 encoding declaration.");
             Assert.Contains("<ui:Style src=\"Assets/Figma2Unity/Generated/TestPackage/TestPackage.uss\" />", uxml);
             Assert.Contains("<ui:VisualElement name=\"MainContainer\"", uxml);
             Assert.Contains("<ui:Label text=\"Welcome to Figma2Unity\" name=\"HeaderLabel\"", uxml);
@@ -128,8 +130,208 @@ namespace Figma2Unity.Tests.Editor
             Assert.AreEqual(1, result.UXMLPaths.Count);
             Assert.IsTrue(File.Exists(result.UXMLPaths[0]));
 
+            string uxmlContent = File.ReadAllText(result.UXMLPaths[0]);
+            Assert.IsFalse(uxmlContent.StartsWith("<?xml"), "Generated UXML file should not contain xml declaration line.");
+            Assert.IsFalse(uxmlContent.Contains("utf-16"), "Generated UXML file should not contain utf-16 encoding declaration.");
+
             // Cleanup temp directory
             Directory.Delete(tempDir, true);
+        }
+
+        [Test]
+        public void USSStyleGenerator_VisualNodeMapping_GeneratesCorrectStyles()
+        {
+            var doc = new IRDocument
+            {
+                rootNodes = new List<IRNode>
+                {
+                    new RectangleNode
+                    {
+                        id = "2:1",
+                        name = "GreenRect",
+                        type = "RECTANGLE",
+                        bounds = new Bounds { x = 10f, y = 20f, width = 120f, height = 80f },
+                        fills = new List<Fill>
+                        {
+                            new Fill { type = "SOLID", color = new ColorValue { r = 0f, g = 1f, b = 0f, a = 1f } }
+                        },
+                        cornerRadius = new CornerRadius { topLeft = 4, topRight = 4, bottomRight = 4, bottomLeft = 4 }
+                    },
+                    new EllipseNode
+                    {
+                        id = "2:2",
+                        name = "BrownCircle",
+                        type = "ELLIPSE",
+                        bounds = new Bounds { x = 50f, y = 100f, width = 60f, height = 60f },
+                        fills = new List<Fill>
+                        {
+                            new Fill { type = "SOLID", color = new ColorValue { r = 0.6f, g = 0.4f, b = 0.2f, a = 1f } }
+                        }
+                    },
+                    new TextNode
+                    {
+                        id = "2:3",
+                        name = "TitleText",
+                        type = "TEXT",
+                        characters = "Hello World",
+                        fontSize = 18f,
+                        textAlign = "CENTER",
+                        bounds = new Bounds { x = 10f, y = 200f, width = 200f, height = 30f },
+                        fills = new List<Fill>
+                        {
+                            new Fill { type = "SOLID", color = new ColorValue { r = 1f, g = 1f, b = 1f, a = 1f } }
+                        }
+                    }
+                }
+            };
+
+            string uss = USSStyleGenerator.GenerateUSS(doc, "TestPackage");
+
+            Assert.IsNotNull(uss);
+
+            // Rectangle assertions
+            Assert.Contains(".greenrect-2_1", uss);
+            Assert.Contains("position: absolute;", uss);
+            Assert.Contains("left: 10px;", uss);
+            Assert.Contains("top: 20px;", uss);
+            Assert.Contains("width: 120px;", uss);
+            Assert.Contains("height: 80px;", uss);
+            Assert.Contains("background-color: rgba(0, 255, 0, 1.00);", uss);
+            Assert.Contains("border-radius: 4px;", uss);
+
+            // Ellipse assertions
+            Assert.Contains(".browncircle-2_2", uss);
+            Assert.Contains("position: absolute;", uss);
+            Assert.Contains("left: 50px;", uss);
+            Assert.Contains("top: 100px;", uss);
+            Assert.Contains("width: 60px;", uss);
+            Assert.Contains("height: 60px;", uss);
+            Assert.Contains("background-color: rgba(153, 102, 51, 1.00);", uss);
+            Assert.Contains("border-radius: 50%;", uss);
+
+            // Text assertions
+            Assert.Contains(".titletext-2_3", uss);
+            Assert.Contains("position: absolute;", uss);
+            Assert.Contains("left: 10px;", uss);
+            Assert.Contains("top: 200px;", uss);
+            Assert.Contains("color: rgba(255, 255, 255, 1.00);", uss);
+            Assert.Contains("background-color: transparent;", uss);
+            Assert.Contains("font-size: 18px;", uss);
+            Assert.Contains("-unity-text-align: middle-center;", uss);
+        }
+
+        [Test]
+        public void TokenAssetGenerator_GenerateTokenAssets_CreatesTokenScriptableObjects()
+        {
+            var doc = new IRDocument
+            {
+                tokens = new Tokens
+                {
+                    colors = new List<ColorToken>
+                    {
+                        new ColorToken { id = "color-1", name = "PrimaryColor", value = new ColorValue { r = 0.2f, g = 0.4f, b = 0.8f, a = 1f }, hex = "#3366CC" }
+                    },
+                    typography = new List<TypographyToken>
+                    {
+                        new TypographyToken { id = "type-1", name = "HeadingLarge", fontFamily = "Inter", fontSize = 24f, fontWeight = 700f }
+                    },
+                    spacing = new List<SpacingToken>
+                    {
+                        new SpacingToken { id = "spacing-1", name = "SpaceMedium", value = 16f }
+                    },
+                    effects = new List<EffectToken>
+                    {
+                        new EffectToken { id = "effect-1", name = "DropShadowSoft", effects = new List<EffectValue>() }
+                    }
+                }
+            };
+
+            var assets = Figma2Unity.Editor.Importer.TokenAssetGenerator.GenerateTokenAssets(doc, null);
+
+            Assert.IsNotNull(assets);
+            Assert.IsNotNull(assets.ColorPaletteAsset);
+            Assert.AreEqual(1, assets.ColorPaletteAsset.colors.Count);
+            Assert.AreEqual("color-1", assets.ColorPaletteAsset.colors[0].id);
+            Assert.IsTrue(assets.ColorPaletteAsset.TryGetToken("color-1", out var colorEntry));
+            Assert.AreEqual("PrimaryColor", colorEntry.name);
+
+            Assert.IsNotNull(assets.TypeRampAsset);
+            Assert.AreEqual(1, assets.TypeRampAsset.typography.Count);
+            Assert.AreEqual("HeadingLarge", assets.TypeRampAsset.typography[0].name);
+            Assert.IsTrue(assets.TypeRampAsset.TryGetToken("type-1", out var typeEntry));
+            Assert.AreEqual(24f, typeEntry.fontSize);
+
+            Assert.IsNotNull(assets.SpacingScaleAsset);
+            Assert.AreEqual(1, assets.SpacingScaleAsset.spacing.Count);
+            Assert.AreEqual(16f, assets.SpacingScaleAsset.spacing[0].value);
+            Assert.IsTrue(assets.SpacingScaleAsset.TryGetToken("spacing-1", out var spaceEntry));
+            Assert.AreEqual(16f, spaceEntry.value);
+
+            Assert.IsNotNull(assets.EffectStyleAsset);
+            Assert.AreEqual(1, assets.EffectStyleAsset.effects.Count);
+            Assert.IsTrue(assets.EffectStyleAsset.TryGetToken("effect-1", out var effectEntry));
+            Assert.AreEqual("DropShadowSoft", effectEntry.name);
+        }
+
+        [Test]
+        public void UIToolkitGenerator_GenerateUSS_OutputsDesignTokenVariablesAndRootBlock()
+        {
+            var doc = new IRDocument
+            {
+                tokens = new Tokens
+                {
+                    colors = new List<ColorToken>
+                    {
+                        new ColorToken { id = "token-blue", name = "Brand Blue", value = new ColorValue { r = 0f, g = 0.5f, b = 1f, a = 1f } }
+                    },
+                    typography = new List<TypographyToken>
+                    {
+                        new TypographyToken { id = "token-h1", name = "H1 Style", fontSize = 32f }
+                    }
+                },
+                rootNodes = new List<IRNode>
+                {
+                    new RectangleNode
+                    {
+                        id = "3:1",
+                        name = "TokenRect",
+                        type = "RECTANGLE",
+                        bounds = new Bounds { x = 0, y = 0, width = 100, height = 100 },
+                        fills = new List<Fill>
+                        {
+                            new Fill { tokenId = "token-blue", type = "SOLID" }
+                        }
+                    },
+                    new TextNode
+                    {
+                        id = "3:2",
+                        name = "TokenText",
+                        type = "TEXT",
+                        characters = "Token Test",
+                        typographyTokenId = "token-h1",
+                        bounds = new Bounds { x = 0, y = 100, width = 200, height = 40 }
+                    }
+                }
+            };
+
+            string uss = UIToolkitGenerator.GenerateUSS(doc, "TokenPkg");
+
+            Assert.IsNotNull(uss);
+            Assert.Contains(":root {", uss);
+            Assert.Contains("--color-brand-blue: rgba(0, 128, 255, 1.00);", uss);
+            Assert.Contains("--font-size-h1-style: 32px;", uss);
+            Assert.Contains("background-color: var(--color-brand-blue);", uss);
+            Assert.Contains("font-size: var(--font-size-h1-style);", uss);
+        }
+
+        [Test]
+        public void TMPFontMatcher_MatchOrGenerateFont_HandlesFontMatchingAndFallback()
+        {
+            var result = Figma2Unity.Editor.Fonts.TMPFontMatcher.MatchOrGenerateFont("NonExistentFontFamilyName123", 700f);
+
+            Assert.IsNotNull(result);
+            Assert.IsTrue(result.UsedFallback || !result.Success);
+            Assert.IsNotNull(result.LogMessage);
         }
     }
 }
