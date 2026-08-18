@@ -64,6 +64,8 @@ namespace Figma2Unity.Editor.Generator
         {
             if (node == null || !node.visible) return null;
 
+            Figma2Unity.Editor.Reporting.FigmaImportLogger.LogNodeProcessed(node.type);
+
             string className = USSStyleGenerator.SanitizeClassName(node.name, node.id);
 
             XElement element;
@@ -76,14 +78,17 @@ namespace Figma2Unity.Editor.Generator
             else if (node is ImageNode imageNode)
             {
                 element = new XElement(UiNs + "Image");
+                Figma2Unity.Editor.Reporting.FigmaImportLogger.LogRasterizedNode(node.id, node.name, node.type, "Image fill rasterization");
             }
             else if (node is VectorNode vectorNode)
             {
                 element = new XElement(UiNs + "Image");
+                Figma2Unity.Editor.Reporting.FigmaImportLogger.LogRasterizedNode(node.id, node.name, node.type, "Vector shape rasterization");
             }
             else if (node is UnsupportedNode unsupportedNode)
             {
                 element = new XElement(UiNs + "Image");
+                Figma2Unity.Editor.Reporting.FigmaImportLogger.LogRasterizedNode(node.id, node.name, node.type, "Unsupported node type fallback to rasterization");
             }
             else
             {

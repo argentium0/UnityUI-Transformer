@@ -74,9 +74,19 @@ namespace Figma2Unity.Editor.Importer
                 string jsonContent = File.ReadAllText(irJsonPath);
                 IRDocument document = ParseIRDocument(jsonContent);
 
-                // 3. Validate Schema Version (FR2)
+                string packageName = Path.GetFileNameWithoutExtension(zipFilePath);
+                if (packageName.EndsWith(".f2u", StringComparison.OrdinalIgnoreCase))
+                {
+                    packageName = packageName.Substring(0, packageName.Length - 4);
+                }
+
+                // 3. Initialize centralized import logger session
+                Figma2Unity.Editor.Reporting.FigmaImportLogger.BeginSession(packageName, document?.schemaVersion);
+
+                // 4. Validate Schema Version (FR2)
                 if (!ValidateSchemaVersion(document.schemaVersion, out string versionError))
                 {
+                    Figma2Unity.Editor.Reporting.FigmaImportLogger.LogValidationWarning("SchemaVersion", versionError);
                     EditorUtility.DisplayDialog("Figma2Unity Schema Error", versionError, "OK");
                     return new ImportResult
                     {
@@ -84,13 +94,6 @@ namespace Figma2Unity.Editor.Importer
                         ErrorMessage = versionError,
                         Document = document
                     };
-                }
-
-                // 4. Determine Destination Folder under Assets/
-                string packageName = Path.GetFileNameWithoutExtension(zipFilePath);
-                if (packageName.EndsWith(".f2u", StringComparison.OrdinalIgnoreCase))
-                {
-                    packageName = packageName.Substring(0, packageName.Length - 4);
                 }
 
                 string destFolder = customDestinationFolder;

@@ -144,6 +144,8 @@ namespace Figma2Unity.Editor.Fonts
                 NodeId = nodeId
             });
 
+            Figma2Unity.Editor.Reporting.FigmaImportLogger.LogMissingFont(fontFamily, fontWeight, nodeName, nodeId, fallbackPath ?? "LiberationSans SDF");
+
             result.Success = true;
             result.UsedFallback = true;
             result.FontAsset = fallbackAsset;
