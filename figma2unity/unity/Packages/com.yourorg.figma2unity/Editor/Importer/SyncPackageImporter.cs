@@ -327,9 +327,12 @@ namespace Figma2Unity.Editor.Importer
             string exportsImagesDir = Path.Combine(rootFolder, "exports", "images");
             if (!Directory.Exists(exportsImagesDir)) return;
 
-            string[] imageFiles = Directory.GetFiles(exportsImagesDir, "*.png", SearchOption.AllDirectories);
+            string[] imageFiles = Directory.GetFiles(exportsImagesDir, "*.*", SearchOption.AllDirectories);
             foreach (string file in imageFiles)
             {
+                string ext = Path.GetExtension(file).ToLowerInvariant();
+                if (ext != ".png" && ext != ".jpg" && ext != ".jpeg") continue;
+
                 string assetPath = file.Replace('\\', '/');
                 TextureImporter importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
                 if (importer != null)

@@ -53,8 +53,17 @@ namespace Figma2Unity.Editor.Importer
             }
         }
 
+        private static double _lastTriggerTime = 0;
+
         private static void OnSyncCompleteDetected(object sender, FileSystemEventArgs e)
         {
+            double currentTime = EditorApplication.timeSinceStartup;
+            if (currentTime - _lastTriggerTime < 1.0)
+            {
+                return;
+            }
+            _lastTriggerTime = currentTime;
+
             string lockFilePath = e.FullPath;
 
             // Thread Safety: FileSystemWatcher runs on a background thread.

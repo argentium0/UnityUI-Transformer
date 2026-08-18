@@ -307,41 +307,65 @@ namespace Figma2Unity.Editor.Generator
                     }
                 }
 
-                // 2. IMAGE & VECTOR ASSET LINKING (single-quoted project://database/ URLs with AssetPathToGUID validation)
+                // 2. IMAGE & VECTOR ASSET LINKING (single-quoted project://database/ URLs with .Replace("\\", "/") sanitization and fallback)
                 bool isImageAsset = false;
                 string pkg = string.IsNullOrEmpty(packageName) ? "SyncPackage" : packageName;
 
                 if (node is ImageNode imgNode && !string.IsNullOrEmpty(imgNode.imageAssetRef))
                 {
-                    string relAssetPath = $"Assets/Figma2UnityImports/{pkg}/{imgNode.imageAssetRef}";
-                    string targetUrl = $"project://database/{relAssetPath}";
+                    string cleanAssetRef = imgNode.imageAssetRef.Replace('\\', '/');
+                    string relAssetPath = $"Assets/Figma2UnityImports/{pkg}/{cleanAssetRef}".Replace('\\', '/');
+                    bool assetExists = true;
+
 #if UNITY_EDITOR
                     string guid = AssetDatabase.AssetPathToGUID(relAssetPath);
-                    if (string.IsNullOrEmpty(guid))
+                    if (string.IsNullOrEmpty(guid) && !File.Exists(Path.GetFullPath(relAssetPath)))
                     {
-                        Debug.LogWarning($"[UIToolkitGenerator] Asset path '{relAssetPath}' does not exist in AssetDatabase yet (GUID empty).");
+                        assetExists = false;
+                        Debug.LogWarning($"[UIToolkitGenerator] Image asset path '{relAssetPath}' does not exist on disk or in AssetDatabase. Falling back to background-color.");
                     }
 #endif
-                    sb.AppendLine($"    background-image: url('{targetUrl}');");
-                    sb.AppendLine("    -unity-background-scale-mode: stretch-to-fill;");
-                    sb.AppendLine("    background-color: transparent;");
-                    isImageAsset = true;
+
+                    if (assetExists)
+                    {
+                        string targetUrl = $"project://database/{relAssetPath}";
+                        sb.AppendLine($"    background-image: url('{targetUrl}');");
+                        sb.AppendLine("    -unity-background-scale-mode: stretch-to-fill;");
+                        sb.AppendLine("    background-color: transparent;");
+                        isImageAsset = true;
+                    }
+                    else
+                    {
+                        sb.AppendLine("    background-color: rgba(255, 255, 255, 0.05);");
+                    }
                 }
                 else if (node is VectorNode vecNode && !string.IsNullOrEmpty(vecNode.svgAssetRef))
                 {
-                    string relAssetPath = $"Assets/Figma2UnityImports/{pkg}/{vecNode.svgAssetRef}";
-                    string targetUrl = $"project://database/{relAssetPath}";
+                    string cleanAssetRef = vecNode.svgAssetRef.Replace('\\', '/');
+                    string relAssetPath = $"Assets/Figma2UnityImports/{pkg}/{cleanAssetRef}".Replace('\\', '/');
+                    bool assetExists = true;
+
 #if UNITY_EDITOR
                     string guid = AssetDatabase.AssetPathToGUID(relAssetPath);
-                    if (string.IsNullOrEmpty(guid))
+                    if (string.IsNullOrEmpty(guid) && !File.Exists(Path.GetFullPath(relAssetPath)))
                     {
-                        Debug.LogWarning($"[UIToolkitGenerator] Asset path '{relAssetPath}' does not exist in AssetDatabase yet (GUID empty).");
+                        assetExists = false;
+                        Debug.LogWarning($"[UIToolkitGenerator] Vector asset path '{relAssetPath}' does not exist on disk or in AssetDatabase. Falling back to background-color.");
                     }
 #endif
-                    sb.AppendLine($"    background-image: url('{targetUrl}');");
-                    sb.AppendLine("    -unity-background-scale-mode: scale-to-fit;");
-                    sb.AppendLine("    background-color: transparent;");
-                    isImageAsset = true;
+
+                    if (assetExists)
+                    {
+                        string targetUrl = $"project://database/{relAssetPath}";
+                        sb.AppendLine($"    background-image: url('{targetUrl}');");
+                        sb.AppendLine("    -unity-background-scale-mode: scale-to-fit;");
+                        sb.AppendLine("    background-color: transparent;");
+                        isImageAsset = true;
+                    }
+                    else
+                    {
+                        sb.AppendLine("    background-color: transparent;");
+                    }
                 }
 
                 // 2.5 FILLS & TRANSPARENT BACKGROUNDS FOR NON-IMAGE NODES
