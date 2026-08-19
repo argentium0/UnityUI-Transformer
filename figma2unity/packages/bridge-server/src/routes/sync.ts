@@ -26,13 +26,13 @@ export async function registerSyncRoute(fastify: FastifyInstance) {
     }
 
     // Write the document
-    await fs.writeFile(path.join(STAGING_DIR, 'ir-document.json'), JSON.stringify(document, null, 2));
+    await fs.writeFile(path.join(STAGING_DIR, 'ir-document.json'), JSON.stringify(document, null, 2), 'utf8');
 
     // Wait 50ms to ensure OS-level file handles are fully flushed before the C# watcher fires
     await new Promise(resolve => setTimeout(resolve, 50));
 
     // Create the completion trigger file
-    await fs.writeFile(path.join(STAGING_DIR, 'sync.complete'), '');
+    await fs.writeFile(path.join(STAGING_DIR, 'sync.complete'), '', 'utf8');
 
     return { success: true, message: 'Live sync payload successfully written to Unity.' };
   });

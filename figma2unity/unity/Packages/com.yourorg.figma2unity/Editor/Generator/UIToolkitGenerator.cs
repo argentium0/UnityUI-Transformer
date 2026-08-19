@@ -34,7 +34,8 @@ namespace Figma2Unity.Editor.Generator
 
             try
             {
-                string jsonContent = File.ReadAllText(irJsonPath);
+                // Force UTF8 Encoding to prevent BOM corruption
+                string jsonContent = File.ReadAllText(irJsonPath, System.Text.Encoding.UTF8);
                 var settings = new Newtonsoft.Json.JsonSerializerSettings();
                 settings.Converters.Add(new Figma2Unity.Editor.Schema.IRNodeConverter());
                 var document = Newtonsoft.Json.JsonConvert.DeserializeObject<IRDocument>(jsonContent, settings);
@@ -46,6 +47,35 @@ namespace Figma2Unity.Editor.Generator
                     {
                         packageName = "LiveSyncPackage";
                     }
+
+                    // Move downloaded images/vectors into the AssetDatabase
+                    string stagingExports = Path.Combine(stagingFolderPath, "exports");
+                    // We copy directly to Assets/Figma2UnityImports/packageName to match the USS path expectation
+                    string destImports = Path.Combine("Assets", "Figma2UnityImports", packageName);
+                    
+                    if (Directory.Exists(stagingExports))
+                    {
+                        if (!Directory.Exists(destImports))
+                        {
+                            Directory.CreateDirectory(destImports);
+                        }
+
+                        // Copy all files recursively
+                        foreach (string file in Directory.GetFiles(stagingExports, "*.*", SearchOption.AllDirectories))
+                        {
+                            string relative = file.Substring(stagingExports.Length).TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                            string destFile = Path.Combine(destImports, relative);
+                            string destDir = Path.GetDirectoryName(destFile);
+                            if (!Directory.Exists(destDir)) Directory.CreateDirectory(destDir);
+                            File.Copy(file, destFile, true);
+                        }
+
+                        // Force Unity to register the new images BEFORE we generate the USS files
+#if UNITY_EDITOR
+                        AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+#endif
+                    }
+
                     string destFolder = Path.Combine("Assets", "Figma2Unity", "Generated", packageName);
                     Generate(document, destFolder, packageName);
                     Debug.Log($"[UIToolkitGenerator] Successfully regenerated stylesheet from {stagingFolderPath}");
@@ -226,7 +256,10 @@ namespace Figma2Unity.Editor.Generator
 
                 // 1. POSITIONING & BOUNDS
                 bool isAbsolute = (node.layoutPositioning == "ABSOLUTE");
-                bool inAutoLayoutFlow = parentLayoutMode != "NONE" && !isAbsolute;
+                bool parentLacksAutoLayout = (parentLayoutMode == "NONE");
+
+                // Prioritize standard Flexbox flow over raw absolute coordinates
+                bool inAutoLayoutFlow = !parentLacksAutoLayout && !isAbsolute;
 
                 if (isRoot)
                 {
@@ -246,7 +279,7 @@ namespace Figma2Unity.Editor.Generator
                     {
                         if (node.autoLayout.layoutGrow > 0)
                         {
-                            sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "    flex-grow: {0};", node.autoLayout.layoutGrow));
+                            sb.AppendLine("    flex-grow: 1;");
                         }
                         if (node.autoLayout.layoutAlign == "STRETCH")
                         {
@@ -256,7 +289,7 @@ namespace Figma2Unity.Editor.Generator
                 }
                 else
                 {
-                    // Non-auto-layout child OR explicitly absolute-positioned child inside auto-layout
+                    // Non-auto-layout child OR explicitly absolute-positioned child OR Group inside free-flow
                     sb.AppendLine("    position: absolute;");
                     if (node.bounds != null)
                     {
@@ -270,42 +303,20 @@ namespace Figma2Unity.Editor.Generator
                     bool fixWidth = true;
                     bool fixHeight = true;
 
-                    if (inAutoLayoutFlow)
+                    // Allow stretching in cross axis by omitting fixed size
+                    if (inAutoLayoutFlow && node.autoLayout != null)
                     {
-                        if (parentLayoutMode == "HORIZONTAL" && node.autoLayout?.layoutGrow > 0) fixWidth = false;
-                        if (parentLayoutMode == "VERTICAL" && node.autoLayout?.layoutAlign == "STRETCH") fixWidth = false;
-
-                        if (parentLayoutMode == "VERTICAL" && node.autoLayout?.layoutGrow > 0) fixHeight = false;
-                        if (parentLayoutMode == "HORIZONTAL" && node.autoLayout?.layoutAlign == "STRETCH") fixHeight = false;
+                        if (parentLayoutMode == "VERTICAL" && node.autoLayout.layoutAlign == "STRETCH") fixWidth = false;
+                        if (parentLayoutMode == "HORIZONTAL" && node.autoLayout.layoutAlign == "STRETCH") fixHeight = false;
                     }
 
-                    bool isContainer = node.autoLayout != null && node.autoLayout.layoutMode != "NONE";
-                    if (isContainer)
-                    {
-                        if (node.autoLayout.layoutMode == "HORIZONTAL" && node.autoLayout.primaryAxisSizingMode == "AUTO") fixWidth = false;
-                        if (node.autoLayout.layoutMode == "VERTICAL" && node.autoLayout.counterAxisSizingMode == "AUTO") fixWidth = false;
-
-                        if (node.autoLayout.layoutMode == "VERTICAL" && node.autoLayout.primaryAxisSizingMode == "AUTO") fixHeight = false;
-                        if (node.autoLayout.layoutMode == "HORIZONTAL" && node.autoLayout.counterAxisSizingMode == "AUTO") fixHeight = false;
-                    }
-
-                    if (node is TextNode tNode)
-                    {
-                        if (tNode.textAutoResize == "WIDTH_AND_HEIGHT") fixWidth = false;
-                        if (tNode.textAutoResize == "WIDTH_AND_HEIGHT" || tNode.textAutoResize == "HEIGHT") fixHeight = false;
-                    }
-
-                    if (fixWidth && node.bounds.width > 0)
+                    if (fixWidth && node.bounds.width >= 0)
                     {
                         sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "    width: {0}px;", node.bounds.width));
-                        sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "    min-width: {0}px;", node.bounds.width));
-                        sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "    max-width: {0}px;", node.bounds.width));
                     }
-                    if (fixHeight && node.bounds.height > 0)
+                    if (fixHeight && node.bounds.height >= 0)
                     {
                         sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "    height: {0}px;", node.bounds.height));
-                        sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "    min-height: {0}px;", node.bounds.height));
-                        sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "    max-height: {0}px;", node.bounds.height));
                     }
                 }
 
@@ -378,73 +389,50 @@ namespace Figma2Unity.Editor.Generator
                     }
                 }
 
-                // 2. IMAGE & VECTOR ASSET LINKING (single-quoted project://database/ URLs with .Replace("\\", "/") sanitization and fallback)
+                // 2. IMAGE & VECTOR ASSET LINKING
                 bool isImageAsset = false;
                 string pkg = string.IsNullOrEmpty(packageName) ? "SyncPackage" : packageName;
 
-                if (node is ImageNode imgNode && !string.IsNullOrEmpty(imgNode.imageAssetRef))
+                // For rasterized nodes that map to an image fill (like 'Rectangle 1')
+                bool hasImageFill = node.fills != null && node.fills.Exists(f => f.type == "IMAGE");
+                string imageRef = (node as ImageNode)?.imageAssetRef;
+                
+                if (string.IsNullOrEmpty(imageRef) && hasImageFill)
                 {
-                    string cleanAssetRef = imgNode.imageAssetRef.Replace('\\', '/');
+                    string sanitizedId = node.id.Replace(":", "_").Replace("/", "_");
+                    imageRef = $"images/{sanitizedId}.png";
+                }
+
+                if (!string.IsNullOrEmpty(imageRef))
+                {
+                    string cleanAssetRef = imageRef.Replace('\\', '/');
                     string relAssetPath = $"Assets/Figma2UnityImports/{pkg}/{cleanAssetRef}".Replace('\\', '/');
-                    bool assetExists = true;
-
-#if UNITY_EDITOR
-                    string guid = AssetDatabase.AssetPathToGUID(relAssetPath);
-                    if (string.IsNullOrEmpty(guid) && !File.Exists(Path.GetFullPath(relAssetPath)))
-                    {
-                        assetExists = false;
-                        Debug.LogWarning($"[UIToolkitGenerator] Image asset path '{relAssetPath}' does not exist on disk or in AssetDatabase. Falling back to background-color.");
-                    }
-#endif
-
-                    if (assetExists)
-                    {
-                        string targetUrl = $"project://database/{relAssetPath}";
-                        sb.AppendLine($"    background-image: url('{targetUrl}');");
-                        sb.AppendLine("    -unity-background-scale-mode: stretch-to-fill;");
-                        sb.AppendLine("    background-color: transparent;");
-                        isImageAsset = true;
-                    }
-                    else
-                    {
-                        sb.AppendLine("    background-color: rgba(255, 255, 255, 0.05);");
-                    }
+                    string targetUrl = $"project://database/{relAssetPath}";
+                    
+                    sb.AppendLine($"    background-image: url('{targetUrl}');");
+                    sb.AppendLine("    -unity-background-scale-mode: stretch-to-fill;");
+                    isImageAsset = true;
                 }
                 else if (node is VectorNode vecNode && !string.IsNullOrEmpty(vecNode.svgAssetRef))
                 {
                     string cleanAssetRef = vecNode.svgAssetRef.Replace('\\', '/');
                     string relAssetPath = $"Assets/Figma2UnityImports/{pkg}/{cleanAssetRef}".Replace('\\', '/');
-                    bool assetExists = true;
-
-#if UNITY_EDITOR
-                    string guid = AssetDatabase.AssetPathToGUID(relAssetPath);
-                    if (string.IsNullOrEmpty(guid) && !File.Exists(Path.GetFullPath(relAssetPath)))
-                    {
-                        assetExists = false;
-                        Debug.LogWarning($"[UIToolkitGenerator] Vector asset path '{relAssetPath}' does not exist on disk or in AssetDatabase. Falling back to background-color.");
-                    }
-#endif
-
-                    if (assetExists)
-                    {
-                        string targetUrl = $"project://database/{relAssetPath}";
-                        sb.AppendLine($"    background-image: url('{targetUrl}');");
-                        sb.AppendLine("    -unity-background-scale-mode: scale-to-fit;");
-                        sb.AppendLine("    background-color: transparent;");
-                        isImageAsset = true;
-                    }
-                    else
-                    {
-                        sb.AppendLine("    background-color: transparent;");
-                    }
+                    string targetUrl = $"project://database/{relAssetPath}";
+                    
+                    sb.AppendLine($"    background-image: url('{targetUrl}');");
+                    sb.AppendLine("    -unity-background-scale-mode: scale-to-fit;");
+                    isImageAsset = true;
                 }
 
-                // 2.5 FILLS & TRANSPARENT BACKGROUNDS FOR NON-IMAGE NODES
+                // 2.5 FILLS & TRANSPARENT BACKGROUNDS
                 bool hasBgFill = false;
-                if (!isImageAsset && node.fills != null && node.fills.Count > 0)
+                if (node.fills != null && node.fills.Count > 0)
                 {
                     foreach (var fill in node.fills)
                     {
+                        // Skip if it's an image or gradient, handled elsewhere
+                        if (fill.type == "IMAGE" || fill.type == "GRADIENT") continue;
+
                         ColorValue colorVal = fill.color;
                         string matchedTokenVar = null;
 
@@ -499,14 +487,15 @@ namespace Figma2Unity.Editor.Generator
                                 sb.AppendLine($"    background-color: {colorValueStr};");
                                 hasBgFill = true;
                             }
-                            break;
+                            break; // Stop after first solid color
                         }
                     }
                 }
 
                 // FORCE TEXT TRANSPARENCY & UNFILLED TRANSPARENCY
-                if (!isImageAsset && (node is TextNode || !hasBgFill))
+                if (!hasBgFill)
                 {
+                    // Avoid appending transparent background if a solid color was already applied
                     sb.AppendLine("    background-color: transparent;");
                 }
 
