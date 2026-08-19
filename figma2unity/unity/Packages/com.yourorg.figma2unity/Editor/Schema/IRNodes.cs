@@ -18,6 +18,7 @@ namespace Figma2Unity.Editor.Schema
         public AutoLayout autoLayout { get; set; }
         public string layoutPositioning { get; set; } = "AUTO";
         public string layoutAlign { get; set; } = "INHERIT";
+        public float layoutGrow { get; set; }
         public Constraints constraints { get; set; }
         public List<Fill> fills { get; set; } = new List<Fill>();
         public List<Stroke> strokes { get; set; } = new List<Stroke>();
@@ -77,6 +78,7 @@ namespace Figma2Unity.Editor.Schema
     public class ComponentInstanceNode : IRNode
     {
         public string componentId { get; set; }
+        public string componentName { get; set; }
         public Dictionary<string, string> variantProperties { get; set; }
         public List<IRNode> children { get; set; } = new List<IRNode>();
     }

@@ -34,7 +34,7 @@ namespace Figma2Unity.Editor.Generator
                 rootUxml.Add(new XElement(UiNs + "Style", new XAttribute("src", sanitizedUssPath)));
             }
 
-            // Generate tree hierarchy starting from rootNode
+            // Generate tree hierarchy starting from rootNode using standard parent-child traversal
             XElement rootElement = BuildXmlElement(rootNode);
             if (rootElement != null)
             {
@@ -67,6 +67,33 @@ namespace Figma2Unity.Editor.Generator
             Figma2Unity.Editor.Reporting.FigmaImportLogger.LogNodeProcessed(node.type);
 
             string className = USSStyleGenerator.SanitizeClassName(node.name, node.id);
+
+            // 1. Halt Component Recursion for INSTANCE nodes (e.g., Button components)
+            if (node is ComponentInstanceNode compNode)
+            {
+                bool isButton = (compNode.componentName != null && compNode.componentName.IndexOf("Button", StringComparison.OrdinalIgnoreCase) >= 0) ||
+                                (compNode.name != null && compNode.name.IndexOf("Button", StringComparison.OrdinalIgnoreCase) >= 0);
+
+                if (isButton)
+                {
+                    var btnElement = new XElement(UiNs + "Button");
+                    string buttonText = compNode.name;
+                    if (compNode.children != null)
+                    {
+                        var textChild = compNode.children.Find(c => c is TextNode) as TextNode;
+                        if (textChild != null && !string.IsNullOrEmpty(textChild.characters))
+                        {
+                            buttonText = textChild.characters;
+                        }
+                    }
+                    btnElement.SetAttributeValue("text", buttonText ?? string.Empty);
+                    btnElement.SetAttributeValue("name", compNode.name ?? "Button");
+                    btnElement.SetAttributeValue("class", className);
+
+                    // HALT RECURSION: Return button element without processing child shapes/texts as duplicate elements
+                    return btnElement;
+                }
+            }
 
             XElement element;
 
@@ -103,7 +130,7 @@ namespace Figma2Unity.Editor.Generator
             element.SetAttributeValue("name", node.name ?? "Element");
             element.SetAttributeValue("class", className);
 
-            // Add children for container node types
+            // Add children for container node types in standard parent-child traversal
             if (node is FrameNode frameNode && frameNode.children != null)
             {
                 foreach (var child in frameNode.children)
@@ -120,9 +147,9 @@ namespace Figma2Unity.Editor.Generator
                     if (childXml != null) element.Add(childXml);
                 }
             }
-            else if (node is ComponentInstanceNode compNode && compNode.children != null)
+            else if (node is ComponentInstanceNode genericCompNode && genericCompNode.children != null)
             {
-                foreach (var child in compNode.children)
+                foreach (var child in genericCompNode.children)
                 {
                     var childXml = BuildXmlElement(child);
                     if (childXml != null) element.Add(childXml);

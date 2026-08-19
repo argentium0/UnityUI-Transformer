@@ -194,6 +194,10 @@ namespace Figma2Unity.Editor.Importer
                 string fontsFolder = Path.Combine("Assets", "Figma2Unity", "Generated", "Fonts");
                 ResolveTextNodeFonts(document, fontsFolder);
 
+                // Synchronously refresh AssetDatabase to resolve async race conditions before UI generation
+                AssetDatabase.SaveAssets();
+                AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+
                 // 9. Synchronously generate UI hierarchy (UI Toolkit UXML/USS or uGUI Prefabs based on target)
                 if (target == UIExporterTarget.uGUI_Prefab)
                 {

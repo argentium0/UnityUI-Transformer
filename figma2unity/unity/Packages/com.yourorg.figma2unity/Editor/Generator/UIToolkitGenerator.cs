@@ -279,163 +279,23 @@ namespace Figma2Unity.Editor.Generator
                 generatedClasses.Add(className);
                 sb.AppendLine($".{className} {{");
 
-                // 1. POSITIONING & BOUNDS
-                bool isAbsolute = (node.layoutPositioning == "ABSOLUTE");
-                bool parentLacksAutoLayout = (parentLayoutMode == "NONE");
-
-                // Prioritize standard Flexbox flow over raw absolute coordinates
-                bool inAutoLayoutFlow = !parentLacksAutoLayout && !isAbsolute;
-
-                if (isRoot)
+                // Route all layout positioning, sizing, flexbox, gap, and padding through UnifiedLayoutResolver
+                var layoutResult = UnifiedLayoutResolver.ResolveLayoutConstraints(node, isRoot, parentLayoutMode);
+                foreach (var rule in layoutResult.Rules)
                 {
-                    sb.AppendLine("    position: absolute;");
-                    sb.AppendLine("    left: 0;");
-                    sb.AppendLine("    top: 0;");
-                    sb.AppendLine("    right: 0;");
-                    sb.AppendLine("    bottom: 0;");
-                    sb.AppendLine("    flex-shrink: 0;");
-                    sb.AppendLine("    overflow: hidden;");
-                }
-                else if (inAutoLayoutFlow)
-                {
-                    // Child inside an Auto-Layout parent participating in flex flow
-                    sb.AppendLine("    position: relative;");
-                    if (node.autoLayout != null)
-                    {
-                        if (node.autoLayout.layoutGrow > 0)
-                        {
-                            sb.AppendLine("    flex-grow: 1;");
-                        }
-                        if (node.autoLayout.layoutAlign == "STRETCH")
-                        {
-                            sb.AppendLine("    align-self: stretch;");
-                        }
-                    }
-                }
-                else
-                {
-                    // Non-auto-layout child OR explicitly absolute-positioned child OR Group inside free-flow
-                    sb.AppendLine("    position: absolute;");
-                    if (node.bounds != null)
-                    {
-                        sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "    left: {0}px;", node.bounds.x));
-                        sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "    top: {0}px;", node.bounds.y));
-                    }
-                }
-
-                if (!isRoot && node.bounds != null)
-                {
-                    bool fixWidth = true;
-                    bool fixHeight = true;
-
-                    // P1 Fix 5: Read layoutAlign from the node directly, not from node.autoLayout
-                    if (inAutoLayoutFlow)
-                    {
-                        string childLayoutAlign = node.layoutAlign ?? "INHERIT";
-                        
-                        if (parentLayoutMode == "VERTICAL")
-                        {
-                            // In vertical container, width is cross-axis
-                            if (childLayoutAlign == "STRETCH") fixWidth = false;
-                            // If child has layoutGrow > 0, it grows in height (primary axis)
-                            if (node.autoLayout != null && node.autoLayout.layoutGrow > 0) fixHeight = false;
-                        }
-                        else if (parentLayoutMode == "HORIZONTAL")
-                        {
-                            // In horizontal container, height is cross-axis
-                            if (childLayoutAlign == "STRETCH") fixHeight = false;
-                            // If child has layoutGrow > 0, it grows in width (primary axis)
-                            if (node.autoLayout != null && node.autoLayout.layoutGrow > 0) fixWidth = false;
-                        }
-                    }
-
-                    if (fixWidth && node.bounds.width >= 0)
-                    {
-                        sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "    width: {0}px;", node.bounds.width));
-                    }
-                    if (fixHeight && node.bounds.height >= 0)
-                    {
-                        sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "    height: {0}px;", node.bounds.height));
-                    }
-                }
-
-                // 1.5 AUTO-LAYOUT FLEXBOX PROPERTIES FOR CONTAINERS
-                bool isAutoLayoutContainer = node.autoLayout != null && !string.IsNullOrEmpty(node.autoLayout.layoutMode) && node.autoLayout.layoutMode != "NONE";
-                if (isAutoLayoutContainer)
-                {
-                    sb.AppendLine("    display: flex;");
-
-                    if (node.autoLayout.layoutMode.Equals("HORIZONTAL", StringComparison.OrdinalIgnoreCase))
-                    {
-                        sb.AppendLine("    flex-direction: row;");
-                    }
-                    else if (node.autoLayout.layoutMode.Equals("VERTICAL", StringComparison.OrdinalIgnoreCase))
-                    {
-                        sb.AppendLine("    flex-direction: column;");
-                    }
-
-                    if (node.autoLayout.gap > 0)
-                    {
-                        sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "    gap: {0}px;", node.autoLayout.gap));
-                    }
-
-                    if (node.autoLayout.padding != null)
-                    {
-                        var pad = node.autoLayout.padding;
-                        if (pad.top > 0) sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "    padding-top: {0}px;", pad.top));
-                        if (pad.right > 0) sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "    padding-right: {0}px;", pad.right));
-                        if (pad.bottom > 0) sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "    padding-bottom: {0}px;", pad.bottom));
-                        if (pad.left > 0) sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "    padding-left: {0}px;", pad.left));
-                    }
-
-                    if (!string.IsNullOrEmpty(node.autoLayout.primaryAxisAlign))
-                    {
-                        switch (node.autoLayout.primaryAxisAlign.ToUpperInvariant())
-                        {
-                            case "MIN":
-                                sb.AppendLine("    justify-content: flex-start;");
-                                break;
-                            case "CENTER":
-                                sb.AppendLine("    justify-content: center;");
-                                break;
-                            case "MAX":
-                                sb.AppendLine("    justify-content: flex-end;");
-                                break;
-                            case "SPACE_BETWEEN":
-                                sb.AppendLine("    justify-content: space-between;");
-                                break;
-                        }
-                    }
-
-                    if (!string.IsNullOrEmpty(node.autoLayout.counterAxisAlign))
-                    {
-                        switch (node.autoLayout.counterAxisAlign.ToUpperInvariant())
-                        {
-                            case "MIN":
-                                sb.AppendLine("    align-items: flex-start;");
-                                break;
-                            case "CENTER":
-                                sb.AppendLine("    align-items: center;");
-                                break;
-                            case "MAX":
-                                sb.AppendLine("    align-items: flex-end;");
-                                break;
-                            case "STRETCH":
-                            case "BASELINE":
-                                sb.AppendLine("    align-items: stretch;");
-                                break;
-                        }
-                    }
+                    sb.AppendLine($"    {rule}");
                 }
 
                 // 2. IMAGE & VECTOR ASSET LINKING
                 string pkg = string.IsNullOrEmpty(packageName) ? "SyncPackage" : packageName;
 
-                // For rasterized nodes that map to an image fill (like 'Rectangle 1')
-                bool hasImageFill = node.fills != null && node.fills.Exists(f => f.type == "IMAGE");
+                // Target the Nested Opacity & Handle Multi-Fills:
+                // Explicitly find the individual IMAGE fill object within node.fills array
+                Fill imageFill = node.fills?.Find(f => string.Equals(f.type, "IMAGE", StringComparison.OrdinalIgnoreCase));
+                bool hasImageFill = imageFill != null;
                 string imageRef = (node as ImageNode)?.imageAssetRef;
                 
-                // P0 Fix 3: FrameNodes with IMAGE fills also carry imageAssetRef
+                // FrameNodes with IMAGE fills also carry imageAssetRef
                 if (string.IsNullOrEmpty(imageRef) && node is FrameNode frameNodeImg)
                 {
                     imageRef = frameNodeImg.imageAssetRef;
@@ -455,6 +315,31 @@ namespace Figma2Unity.Editor.Generator
                     
                     sb.AppendLine($"    background-image: url('{targetUrl}');");
                     sb.AppendLine("    -unity-background-scale-mode: stretch-to-fill;");
+
+                    // 1. Extract opacity from the individual IMAGE fill object, color alpha, or node fallback
+                    float opacityValue = 1.0f;
+                    if (imageFill != null && imageFill.opacity.HasValue)
+                    {
+                        opacityValue = imageFill.opacity.Value;
+                    }
+                    else if (imageFill?.color != null)
+                    {
+                        opacityValue = imageFill.color.a;
+                    }
+                    else if (node.opacity < 1.0f)
+                    {
+                        opacityValue = node.opacity;
+                    }
+
+                    // 2. Add Diagnostic Logging for imported image fill opacity
+                    Debug.Log($"[Figma2Unity] Image Fill Opacity Parsed for '{node.name}' ({node.id}): {opacityValue}");
+
+                    // 3. Apply -unity-background-image-tint-color with float formatting if opacity is less than 100%
+                    if (opacityValue < 1.0f)
+                    {
+                        string formattedAlpha = opacityValue.ToString("F2", CultureInfo.InvariantCulture);
+                        sb.AppendLine($"    -unity-background-image-tint-color: rgba(255, 255, 255, {formattedAlpha});");
+                    }
                 }
                 else if (node is VectorNode vecNode && !string.IsNullOrEmpty(vecNode.svgAssetRef))
                 {
@@ -600,7 +485,9 @@ namespace Figma2Unity.Editor.Generator
                 }
 
                 // 5. OPACITY
-                if (node.opacity < 1.0f)
+                // Do not apply standard container element opacity if the opacity was applied via -unity-background-image-tint-color on an IMAGE fill
+                bool hasImageFillTint = hasImageFill && imageFill?.opacity != null && imageFill.opacity.Value < 1.0f;
+                if (node.opacity < 1.0f && !hasImageFillTint)
                 {
                     sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "    opacity: {0:F2};", node.opacity));
                 }
@@ -661,6 +548,18 @@ namespace Figma2Unity.Editor.Generator
             }
 
             // Recurse children passing current layout mode
+            // Halt recursion for standalone Button component instances
+            if (node is ComponentInstanceNode compNodeCheck)
+            {
+                bool isBtn = (compNodeCheck.componentName != null && compNodeCheck.componentName.IndexOf("Button", StringComparison.OrdinalIgnoreCase) >= 0) ||
+                             (compNodeCheck.name != null && compNodeCheck.name.IndexOf("Button", StringComparison.OrdinalIgnoreCase) >= 0);
+                if (isBtn)
+                {
+                    // Halt component recursion for Button instance
+                    return;
+                }
+            }
+
             string currentLayoutMode = (node.autoLayout != null && !string.IsNullOrEmpty(node.autoLayout.layoutMode)) ? node.autoLayout.layoutMode : "NONE";
 
             if (node is FrameNode frameNode && frameNode.children != null)
@@ -677,9 +576,9 @@ namespace Figma2Unity.Editor.Generator
                     GenerateNodeStylesRecursive(child, sb, generatedClasses, document, false, currentLayoutMode, packageName);
                 }
             }
-            else if (node is ComponentInstanceNode compNode && compNode.children != null)
+            else if (node is ComponentInstanceNode genericCompNode && genericCompNode.children != null)
             {
-                foreach (var child in compNode.children)
+                foreach (var child in genericCompNode.children)
                 {
                     GenerateNodeStylesRecursive(child, sb, generatedClasses, document, false, currentLayoutMode, packageName);
                 }
@@ -784,25 +683,24 @@ namespace Figma2Unity.Editor.Generator
             var resolution = Figma2Unity.Editor.Fonts.FontResolver.ResolveFontForTextNode(textNode);
             if (resolution != null && resolution.Success && !resolution.UsedFallback && !string.IsNullOrEmpty(resolution.AssetPath))
             {
-                // Ensure assetPath is a valid standard font asset and not a TMP_FontAsset (.asset) or LiberationSans SDF
-                if (!resolution.AssetPath.EndsWith("SDF.asset", StringComparison.OrdinalIgnoreCase) &&
-                    !resolution.AssetPath.Contains("LiberationSans"))
-                {
-                    assetPath = resolution.AssetPath;
-                }
+                // Prefer the raw .ttf/.otf font asset path for UI Toolkit -unity-font-definition
+                assetPath = resolution.AssetPath;
             }
 #endif
 
             if (string.IsNullOrEmpty(assetPath))
             {
-                // Omit font definition when custom font is missing so UI Toolkit falls back to system default font cleanly
+                Debug.LogWarning($"[Figma2Unity FontPipeline] Font definition URL omitted for missing font '{textNode.fontFamily}' on text node '{textNode.name}'. UI Toolkit will fallback to system default font.");
                 return null;
             }
 
             assetPath = assetPath.Replace('\\', '/');
-            return assetPath.StartsWith("project://", StringComparison.OrdinalIgnoreCase)
+            string fontUrl = assetPath.StartsWith("project://", StringComparison.OrdinalIgnoreCase)
                 ? assetPath
                 : $"project://database/{assetPath}";
+
+            Debug.Log($"[Figma2Unity FontPipeline] Resolved font definition URL: '{fontUrl}' for font '{textNode.fontFamily}'");
+            return fontUrl;
         }
 
         public static string SanitizeTokenVarName(string tokenName)
@@ -817,6 +715,183 @@ namespace Figma2Unity.Editor.Generator
         private static int ConvertColorChannel(float value)
         {
             return (int)Math.Round(Math.Max(0f, Math.Min(1f, value)) * 255f);
+        }
+    }
+
+    public static class UnifiedLayoutResolver
+    {
+        public class LayoutResolutionResult
+        {
+            public bool InAutoLayoutFlow;
+            public bool IsAbsolute;
+            public List<string> Rules = new List<string>();
+        }
+
+        public static LayoutResolutionResult ResolveLayoutConstraints(IRNode node, bool isRoot, string parentLayoutMode)
+        {
+            var result = new LayoutResolutionResult();
+            if (node == null) return result;
+
+            bool isExplicitAbsolute = string.Equals(node.layoutPositioning, "ABSOLUTE", StringComparison.OrdinalIgnoreCase);
+            bool parentHasAutoLayout = !string.IsNullOrEmpty(parentLayoutMode) && !string.Equals(parentLayoutMode, "NONE", StringComparison.OrdinalIgnoreCase);
+
+            // PHASE 1: Strict Decoupling of Positioning
+            result.InAutoLayoutFlow = parentHasAutoLayout && !isExplicitAbsolute;
+            result.IsAbsolute = isRoot || isExplicitAbsolute || !parentHasAutoLayout;
+
+            if (isRoot)
+            {
+                result.Rules.Add("position: absolute;");
+                result.Rules.Add("left: 0;");
+                result.Rules.Add("top: 0;");
+                result.Rules.Add("right: 0;");
+                result.Rules.Add("bottom: 0;");
+                result.Rules.Add("flex-shrink: 0;");
+                result.Rules.Add("overflow: hidden;");
+            }
+            else if (result.InAutoLayoutFlow)
+            {
+                // Auto Layout Flex Child: position relative to flex container.
+                // STRICT RULE: STRIP all left, top, right, bottom absolute coordinates!
+                result.Rules.Add("position: relative;");
+            }
+            else
+            {
+                // Canvas Absolute Element: position absolute with left/top coordinates
+                result.Rules.Add("position: absolute;");
+                if (node.bounds != null)
+                {
+                    result.Rules.Add(string.Format(CultureInfo.InvariantCulture, "left: {0}px;", node.bounds.x));
+                    result.Rules.Add(string.Format(CultureInfo.InvariantCulture, "top: {0}px;", node.bounds.y));
+                }
+            }
+
+            // PHASE 2: Universal Sizing Matrix
+            if (!isRoot && node.bounds != null)
+            {
+                bool fixWidth = true;
+                bool fixHeight = true;
+                bool autoWidth = false;
+                bool autoHeight = false;
+
+                // 1. Self AutoLayout container sizing modes (FIXED, FILL, HUG/AUTO)
+                if (node.autoLayout != null && !string.IsNullOrEmpty(node.autoLayout.layoutMode) && !string.Equals(node.autoLayout.layoutMode, "NONE", StringComparison.OrdinalIgnoreCase))
+                {
+                    string mode = node.autoLayout.layoutMode.ToUpperInvariant();
+                    string primarySizing = (node.autoLayout.primaryAxisSizingMode ?? "FIXED").ToUpperInvariant();
+                    string counterSizing = (node.autoLayout.counterAxisSizingMode ?? "FIXED").ToUpperInvariant();
+
+                    if (mode == "VERTICAL")
+                    {
+                        // Primary Axis = Height, Counter Axis = Width
+                        if (primarySizing == "HUG" || primarySizing == "AUTO") { fixHeight = false; autoHeight = true; }
+                        else if (primarySizing == "FILL") { fixHeight = false; result.Rules.Add("flex-grow: 1;"); }
+
+                        if (counterSizing == "HUG" || counterSizing == "AUTO") { fixWidth = false; autoWidth = true; }
+                        else if (counterSizing == "FILL") { fixWidth = false; result.Rules.Add("align-self: stretch;"); }
+                    }
+                    else if (mode == "HORIZONTAL")
+                    {
+                        // Primary Axis = Width, Counter Axis = Height
+                        if (primarySizing == "HUG" || primarySizing == "AUTO") { fixWidth = false; autoWidth = true; }
+                        else if (primarySizing == "FILL") { fixWidth = false; result.Rules.Add("flex-grow: 1;"); }
+
+                        if (counterSizing == "HUG" || counterSizing == "AUTO") { fixHeight = false; autoHeight = true; }
+                        else if (counterSizing == "FILL") { fixHeight = false; result.Rules.Add("align-self: stretch;"); }
+                    }
+                }
+
+                // 2. Child alignment & grow inside AutoLayout parent
+                if (result.InAutoLayoutFlow)
+                {
+                    string childLayoutAlign = (node.layoutAlign ?? "INHERIT").ToUpperInvariant();
+                    if (childLayoutAlign == "STRETCH")
+                    {
+                        result.Rules.Add("align-self: stretch;");
+                        if (parentLayoutMode == "VERTICAL") fixWidth = false;
+                        else if (parentLayoutMode == "HORIZONTAL") fixHeight = false;
+                    }
+
+                    if (node.layoutGrow > 0)
+                    {
+                        result.Rules.Add("flex-grow: 1;");
+                        if (parentLayoutMode == "VERTICAL") fixHeight = false;
+                        else if (parentLayoutMode == "HORIZONTAL") fixWidth = false;
+                    }
+                }
+
+                // Output sizing rules
+                if (fixWidth && node.bounds.width >= 0)
+                {
+                    result.Rules.Add(string.Format(CultureInfo.InvariantCulture, "width: {0}px;", node.bounds.width));
+                }
+                else if (autoWidth)
+                {
+                    result.Rules.Add("width: auto;");
+                }
+
+                if (fixHeight && node.bounds.height >= 0)
+                {
+                    result.Rules.Add(string.Format(CultureInfo.InvariantCulture, "height: {0}px;", node.bounds.height));
+                }
+                else if (autoHeight)
+                {
+                    result.Rules.Add("height: auto;");
+                }
+            }
+
+            // PHASE 3: Flex-Direction, Gap & Padding for Container Nodes
+            if (node.autoLayout != null && !string.IsNullOrEmpty(node.autoLayout.layoutMode) && !string.Equals(node.autoLayout.layoutMode, "NONE", StringComparison.OrdinalIgnoreCase))
+            {
+                result.Rules.Add("display: flex;");
+
+                if (string.Equals(node.autoLayout.layoutMode, "HORIZONTAL", StringComparison.OrdinalIgnoreCase))
+                {
+                    result.Rules.Add("flex-direction: row;");
+                }
+                else if (string.Equals(node.autoLayout.layoutMode, "VERTICAL", StringComparison.OrdinalIgnoreCase))
+                {
+                    result.Rules.Add("flex-direction: column;");
+                }
+
+                if (node.autoLayout.gap > 0)
+                {
+                    result.Rules.Add(string.Format(CultureInfo.InvariantCulture, "gap: {0}px;", node.autoLayout.gap));
+                }
+
+                if (node.autoLayout.padding != null)
+                {
+                    var pad = node.autoLayout.padding;
+                    if (pad.top > 0) result.Rules.Add(string.Format(CultureInfo.InvariantCulture, "padding-top: {0}px;", pad.top));
+                    if (pad.right > 0) result.Rules.Add(string.Format(CultureInfo.InvariantCulture, "padding-right: {0}px;", pad.right));
+                    if (pad.bottom > 0) result.Rules.Add(string.Format(CultureInfo.InvariantCulture, "padding-bottom: {0}px;", pad.bottom));
+                    if (pad.left > 0) result.Rules.Add(string.Format(CultureInfo.InvariantCulture, "padding-left: {0}px;", pad.left));
+                }
+
+                if (!string.IsNullOrEmpty(node.autoLayout.primaryAxisAlign))
+                {
+                    switch (node.autoLayout.primaryAxisAlign.ToUpperInvariant())
+                    {
+                        case "MIN": result.Rules.Add("justify-content: flex-start;"); break;
+                        case "CENTER": result.Rules.Add("justify-content: center;"); break;
+                        case "MAX": result.Rules.Add("justify-content: flex-end;"); break;
+                        case "SPACE_BETWEEN": result.Rules.Add("justify-content: space-between;"); break;
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(node.autoLayout.counterAxisAlign))
+                {
+                    switch (node.autoLayout.counterAxisAlign.ToUpperInvariant())
+                    {
+                        case "MIN": result.Rules.Add("align-items: flex-start;"); break;
+                        case "CENTER": result.Rules.Add("align-items: center;"); break;
+                        case "MAX": result.Rules.Add("align-items: flex-end;"); break;
+                        case "STRETCH": case "BASELINE": result.Rules.Add("align-items: stretch;"); break;
+                    }
+                }
+            }
+
+            return result;
         }
     }
 }

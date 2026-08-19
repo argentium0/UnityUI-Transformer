@@ -350,8 +350,8 @@ export class NodeTraverser {
     const cornerRadius = this.extractCornerRadius(node);
     const effects = this.extractEffects(node);
 
-    // P1 Fix 5: Extract layoutAlign as a per-child property (not from autoLayout)
     const layoutAlign = 'layoutAlign' in node ? ((node as any).layoutAlign as string) || 'INHERIT' : 'INHERIT';
+    const layoutGrow = 'layoutGrow' in node ? ((node as any).layoutGrow as number) || 0 : 0;
 
     return {
       id: node.id,
@@ -362,6 +362,7 @@ export class NodeTraverser {
       bounds,
       layoutPositioning: 'layoutPositioning' in node ? ((node as any).layoutPositioning as 'AUTO' | 'ABSOLUTE') || 'AUTO' : 'AUTO',
       layoutAlign,
+      layoutGrow,
       fills,
       strokes,
       cornerRadius,
@@ -386,8 +387,6 @@ export class NodeTraverser {
       counterAxisSizingMode: (node.counterAxisSizingMode as 'FIXED' | 'AUTO') || 'FIXED',
       primaryAxisAlign: ((node as any).primaryAxisAlignItems || (node as any).primaryAxisAlign || 'MIN') as any,
       counterAxisAlign: ((node as any).counterAxisAlignItems || (node as any).counterAxisAlign || 'MIN') as any,
-      layoutAlign: (node.layoutAlign as any) || 'INHERIT',
-      layoutGrow: node.layoutGrow ?? 0,
     };
   }
 
@@ -413,6 +412,7 @@ export class NodeTraverser {
         fills.push({
           tokenId,
           type: 'IMAGE',
+          opacity: fill.opacity,
         });
       } else if (fill.type.startsWith('GRADIENT')) {
         fills.push({

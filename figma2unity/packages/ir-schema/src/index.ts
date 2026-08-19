@@ -94,8 +94,6 @@ export const AutoLayoutSchema = z.object({
   counterAxisSizingMode: z.enum(['FIXED', 'AUTO']).default('FIXED'),
   primaryAxisAlign: z.enum(['MIN', 'CENTER', 'MAX', 'SPACE_BETWEEN']).default('MIN'),
   counterAxisAlign: z.enum(['MIN', 'CENTER', 'MAX', 'BASELINE']).default('MIN'),
-  layoutAlign: z.enum(['STRETCH', 'INHERIT']).default('INHERIT'),
-  layoutGrow: z.number().default(0),
 });
 export type AutoLayout = z.infer<typeof AutoLayoutSchema>;
 
@@ -144,6 +142,7 @@ const BaseNodeFields = {
   autoLayout: AutoLayoutSchema.optional(),
   layoutPositioning: z.enum(['AUTO', 'ABSOLUTE']).default('AUTO'),
   layoutAlign: z.enum(['STRETCH', 'INHERIT']).default('INHERIT'),
+  layoutGrow: z.number().default(0),
   constraints: ConstraintsSchema.optional(),
   fills: z.array(FillSchema).default([]),
   strokes: z.array(StrokeSchema).default([]),

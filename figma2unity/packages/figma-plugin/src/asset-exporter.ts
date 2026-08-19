@@ -24,22 +24,26 @@ export class AssetExporter {
     for (const node of nodes) {
       const rawId = node.id.replace(/[:/]/g, '_');
       const isVector = ['VECTOR', 'STAR', 'POLYGON', 'BOOLEAN_OPERATION', 'LINE'].includes(node.type);
-      const isImage = node.type === 'RECTANGLE' && Array.isArray((node as any).fills) && (node as any).fills.some((f: any) => f.type === 'IMAGE');
+      const fills = Array.isArray((node as any).fills) ? (node as any).fills : [];
+      const hasImageFill = fills.some((f: any) => f.type === 'IMAGE');
+      const isExplicitExport = Array.isArray((node as any).exportSettings) && (node as any).exportSettings.length > 0;
+      const isFrame = ['FRAME', 'SECTION'].includes(node.type);
+      const hasChildren = 'children' in node && Array.isArray((node as any).children) && (node as any).children.length > 0;
       const isUnsupported = !['FRAME', 'SECTION', 'GROUP', 'RECTANGLE', 'ELLIPSE', 'TEXT', 'INSTANCE', 'COMPONENT', 'COMPONENT_SET'].includes(node.type) && !isVector;
 
-      // P0 Fix 3: FRAME/SECTION nodes with IMAGE fills need raster export too
-      const isFrameWithImageFill = ['FRAME', 'SECTION'].includes(node.type) &&
-        Array.isArray((node as any).fills) &&
-        (node as any).fills.some((f: any) => f.type === 'IMAGE');
+      // STOP FLATTENING FRAMES:
+      // Do not export FRAME/SECTION nodes with children as flattened PNGs,
+      // UNLESS extracting their background image fill asset or explicitly marked for export.
+      if (isFrame && hasChildren && !hasImageFill && !isExplicitExport) {
+        continue;
+      }
 
       if (isVector) {
-        // P0 Fix 2: Rasterize vectors to PNG instead of exporting SVG
-        // Unity UI Toolkit cannot render raw SVG files in background-image
         try {
           const [png1x, png2x, png3x] = await Promise.all([
-            this.exportPng(node, 1),
-            this.exportPng(node, 2),
-            this.exportPng(node, 3),
+            this.exportImageFillOrNode(node, 1),
+            this.exportImageFillOrNode(node, 2),
+            this.exportImageFillOrNode(node, 3),
           ]);
 
           assets.push({ path: `exports/images/${sanitizeAssetFileName(`${rawId}_1x.png`)}`, data: png1x, mimeType: 'image/png' });
@@ -49,12 +53,12 @@ export class AssetExporter {
         } catch {
           metrics.failedCount++;
         }
-      } else if (isImage || isUnsupported || isFrameWithImageFill) {
+      } else if (hasImageFill || isExplicitExport || isUnsupported || (!isFrame && node.type === 'RECTANGLE')) {
         try {
           const [png1x, png2x, png3x] = await Promise.all([
-            this.exportPng(node, 1),
-            this.exportPng(node, 2),
-            this.exportPng(node, 3),
+            this.exportImageFillOrNode(node, 1),
+            this.exportImageFillOrNode(node, 2),
+            this.exportImageFillOrNode(node, 3),
           ]);
 
           assets.push({ path: `exports/images/${sanitizeAssetFileName(`${rawId}_1x.png`)}`, data: png1x, mimeType: 'image/png' });
@@ -70,14 +74,32 @@ export class AssetExporter {
     return { assets, metrics };
   }
 
-  private async exportPng(node: SceneNode, scale: number): Promise<Uint8Array> {
+  private async exportImageFillOrNode(node: SceneNode, scale: number): Promise<Uint8Array> {
+    // 1. Extract raw background image fill bytes directly from Figma image store if present,
+    // avoiding calling exportAsync on frame nodes which would render child elements into the PNG.
+    if (Array.isArray((node as any).fills)) {
+      const imageFill = (node as any).fills.find((f: any) => f.type === 'IMAGE' && f.imageHash);
+      if (imageFill && typeof figma !== 'undefined' && typeof (figma as any).getImageByHash === 'function') {
+        try {
+          const imageObj = (figma as any).getImageByHash(imageFill.imageHash);
+          if (imageObj && typeof imageObj.getBytesAsync === 'function') {
+            return await imageObj.getBytesAsync();
+          }
+        } catch {
+          // Fall through to exportAsync if getBytesAsync fails
+        }
+      }
+    }
+
+    // 2. Fallback to exportAsync on standalone nodes
     if (typeof node.exportAsync === 'function') {
       return await node.exportAsync({
         format: 'PNG',
         constraint: { type: 'SCALE', value: scale },
       });
     }
-    // Mock fallback for test environment
+
+    // 3. Mock fallback for test environment
     return this.encodeString(`MOCK_PNG_DATA_SCALE_${scale}`);
   }
 

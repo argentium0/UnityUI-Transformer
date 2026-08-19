@@ -447,5 +447,199 @@ namespace Figma2Unity.Tests.Editor
             string cleanName = Figma2Unity.Editor.Fonts.GoogleFontFetcher.GetCleanFontName("Irish Grover");
             Assert.AreEqual("IrishGrover", cleanName);
         }
+
+        [Test]
+        public void BuildXmlElement_ComponentInstanceButton_HaltsRecursionAndDoesNotDuplicateChildren()
+        {
+            var buttonInstance = new ComponentInstanceNode
+            {
+                id = "btn-1",
+                name = "PrimaryButton",
+                type = "INSTANCE",
+                componentName = "Button",
+                children = new List<IRNode>
+                {
+                    new TextNode
+                    {
+                        id = "btn-text-1",
+                        name = "Label",
+                        type = "TEXT",
+                        characters = "Click Me"
+                    }
+                }
+            };
+
+            string uxml = UXMLTreeGenerator.GenerateUXML(buttonInstance, "test.uss");
+
+            Assert.Contains("<ui:Button name=\"PrimaryButton\" class=\"primarybutton-btn-1\" text=\"Click Me\" />", uxml);
+            Assert.IsFalse(uxml.Contains("<ui:Label"));
+        }
+
+        [Test]
+        public void BuildXmlElement_SinglePass_DoesNotDuplicateChildrenInAutoLayout()
+        {
+            var childLabel = new TextNode
+            {
+                id = "child-1",
+                name = "CardText",
+                type = "TEXT",
+                characters = "AutoLayout Card Text"
+            };
+
+            var parentFrame = new FrameNode
+            {
+                id = "frame-1",
+                name = "AutoLayoutCard",
+                type = "FRAME",
+                autoLayout = new AutoLayout { layoutMode = "VERTICAL" },
+                children = new List<IRNode> { childLabel }
+            };
+
+            string uxml = UXMLTreeGenerator.GenerateUXML(parentFrame, "test.uss");
+
+            // Count occurrences of child-1 class in UXML
+            int count = 0;
+            int index = 0;
+            while ((index = uxml.IndexOf("cardtext-child-1", index, StringComparison.Ordinal)) != -1)
+            {
+                count++;
+                index += "cardtext-child-1".Length;
+            }
+
+            Assert.AreEqual(1, count);
+        }
+
+        [Test]
+        public void GenerateUSS_MutuallyExclusiveLayout_FlexChildHasNoAbsoluteCoordinates()
+        {
+            var doc = new IRDocument
+            {
+                rootNodes = new List<IRNode>
+                {
+                    new FrameNode
+                    {
+                        id = "root-frame",
+                        name = "RootAutoLayout",
+                        type = "FRAME",
+                        autoLayout = new AutoLayout { layoutMode = "VERTICAL" },
+                        children = new List<IRNode>
+                        {
+                            new FrameNode
+                            {
+                                id = "flex-child",
+                                name = "FlexChild",
+                                type = "FRAME",
+                                bounds = new Bounds { x = 10, y = 20, width = 100, height = 50 }
+                            }
+                        }
+                    }
+                }
+            };
+
+            string uss = USSStyleGenerator.GenerateUSS(doc, "TestPkg");
+
+            // Verify Flex child has position: relative and NO left/top absolute offsets
+            int childClassIdx = uss.IndexOf(".flexchild-flex-child", StringComparison.Ordinal);
+            Assert.IsTrue(childClassIdx >= 0);
+
+            string childCss = uss.Substring(childClassIdx);
+            int closingBraceIdx = childCss.IndexOf('}');
+            childCss = childCss.Substring(0, closingBraceIdx);
+
+            Assert.Contains("position: relative;", childCss);
+            Assert.IsFalse(childCss.Contains("left:"));
+            Assert.IsFalse(childCss.Contains("top:"));
+        }
+
+        [Test]
+        public void GenerateUSS_AutoLayoutSizingModes_MapsFixedFillAndHugCorrectly()
+        {
+            var doc = new IRDocument
+            {
+                rootNodes = new List<IRNode>
+                {
+                    new FrameNode
+                    {
+                        id = "hug-container",
+                        name = "HugFrame",
+                        type = "FRAME",
+                        bounds = new Bounds { x = 0, y = 0, width = 200, height = 100 },
+                        autoLayout = new AutoLayout
+                        {
+                            layoutMode = "VERTICAL",
+                            primaryAxisSizingMode = "HUG",
+                            counterAxisSizingMode = "FILL"
+                        }
+                    }
+                }
+            };
+
+            string uss = USSStyleGenerator.GenerateUSS(doc, "TestPkg");
+
+            Assert.Contains("height: auto;", uss);
+            Assert.Contains("align-self: stretch;", uss);
+        }
+
+        [Test]
+        public void GenerateUSS_InstanceButton_RendersContainerStylingBeforeHalting()
+        {
+            var doc = new IRDocument
+            {
+                rootNodes = new List<IRNode>
+                {
+                    new ComponentInstanceNode
+                    {
+                        id = "btn-inst-1",
+                        name = "PrimaryBtn",
+                        type = "INSTANCE",
+                        componentName = "Button",
+                        bounds = new Bounds { x = 0, y = 0, width = 120, height = 40 },
+                        cornerRadius = new CornerRadius { topLeft = 8, topRight = 8, bottomRight = 8, bottomLeft = 8 },
+                        fills = new List<Fill> { new Fill { type = "SOLID", color = new ColorValue { r = 0, g = 0.5f, b = 1, a = 1 } } }
+                    }
+                }
+            };
+
+            string uss = USSStyleGenerator.GenerateUSS(doc, "TestPkg");
+
+            Assert.Contains("border-radius: 8px;", uss);
+            Assert.Contains("width: 120px;", uss);
+            Assert.Contains("height: 40px;", uss);
+            Assert.Contains("background-color: rgba(0, 128, 255, 1.00);", uss);
+        }
+
+        [Test]
+        public void UnifiedLayoutResolver_ResolvesPositioningSizingAndFlexDirectives()
+        {
+            var childNode = new FrameNode
+            {
+                id = "child-frame",
+                name = "InputBox",
+                type = "FRAME",
+                bounds = new Bounds { x = 15, y = 30, width = 250, height = 48 },
+                autoLayout = new AutoLayout
+                {
+                    layoutMode = "HORIZONTAL",
+                    gap = 12,
+                    padding = new Padding { top = 8, right = 16, bottom = 8, left = 16 },
+                    primaryAxisSizingMode = "FIXED",
+                    counterAxisSizingMode = "HUG"
+                }
+            };
+
+            var res = UIToolkitGenerator.UnifiedLayoutResolver.ResolveLayoutConstraints(childNode, false, "VERTICAL");
+
+            Assert.IsTrue(res.InAutoLayoutFlow);
+            Assert.Contains("position: relative;", res.Rules);
+            Assert.IsFalse(res.Rules.Exists(r => r.StartsWith("left:")));
+            Assert.IsFalse(res.Rules.Exists(r => r.StartsWith("top:")));
+
+            Assert.Contains("display: flex;", res.Rules);
+            Assert.Contains("flex-direction: row;", res.Rules);
+            Assert.Contains("gap: 12px;", res.Rules);
+            Assert.Contains("padding-top: 8px;", res.Rules);
+            Assert.Contains("width: 250px;", res.Rules);
+            Assert.Contains("height: auto;", res.Rules);
+        }
     }
 }

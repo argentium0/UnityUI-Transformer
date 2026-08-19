@@ -12,11 +12,17 @@ namespace Figma2Unity.Editor.Fonts
     {
         public static UnityEngine.Object BakeFontAsset(Font sourceFont, string sourcePath, string targetFontsFolder = null)
         {
-            if (sourceFont == null) return null;
+            if (sourceFont == null)
+            {
+                Debug.LogError($"[Figma2Unity FontPipeline] Cannot bake FontAsset: sourceFont is null for path '{sourcePath}'!");
+                return null;
+            }
 
 #if UNITY_EDITOR
             try
             {
+                Debug.Log($"[Figma2Unity FontPipeline] Triggering FontAsset creation for '{sourceFont.name}' from path '{sourcePath}'...");
+
                 var tmpType = Type.GetType("TMPro.TMP_FontAsset, Unity.TextMeshPro") ?? Type.GetType("TMPro.TMP_FontAsset");
                 if (tmpType != null)
                 {
@@ -41,15 +47,30 @@ namespace Figma2Unity.Editor.Fonts
 
                             AssetDatabase.CreateAsset(createdAsset, savePath);
                             AssetDatabase.SaveAssets();
-                            Debug.Log($"[FontAssetBaker] Successfully baked TMP Font Asset for '{sourceFont.name}' at {savePath}");
+                            AssetDatabase.ImportAsset(savePath, ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
+                            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+
+                            Debug.Log($"[Figma2Unity FontPipeline] FontAsset successfully baked and saved at '{savePath}'");
                             return createdAsset;
                         }
+                        else
+                        {
+                            Debug.LogError($"[Figma2Unity FontPipeline] TMP_FontAsset.CreateFontAsset returned null for '{sourceFont.name}'!");
+                        }
                     }
+                    else
+                    {
+                        Debug.LogError($"[Figma2Unity FontPipeline] Could not find CreateFontAsset method on TMPro.TMP_FontAsset!");
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning($"[Figma2Unity FontPipeline] TMPro assembly not found. Skipping TMP_FontAsset baking.");
                 }
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"[FontAssetBaker] Failed to bake TMP Font Asset for {sourceFont.name}: {ex.Message}");
+                Debug.LogError($"[Figma2Unity FontPipeline] Exception during FontAsset baking for '{sourceFont.name}': {ex.Message}\n{ex.StackTrace}");
             }
 #endif
             return null;

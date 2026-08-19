@@ -30,7 +30,11 @@ namespace Figma2Unity.Editor.Fonts
 
         public static string FetchGoogleFont(string fontFamily, string outputDirectory = null)
         {
-            if (string.IsNullOrEmpty(fontFamily)) return null;
+            if (string.IsNullOrEmpty(fontFamily))
+            {
+                Debug.LogWarning("[Figma2Unity FontPipeline] FetchGoogleFont called with null or empty fontFamily.");
+                return null;
+            }
 
             string cleanFontName = GetCleanFontName(fontFamily);
             if (string.IsNullOrEmpty(outputDirectory))
@@ -44,19 +48,24 @@ namespace Figma2Unity.Editor.Fonts
             // 1. Return immediately if font TTF already exists on disk
             if (File.Exists(targetPath))
             {
+                Debug.Log($"[Figma2Unity FontPipeline] Font file already exists on disk at '{targetPath}'. Skipping download.");
                 return targetPath;
             }
+
+            Debug.Log($"[Figma2Unity FontPipeline] Missing font detected: '{fontFamily}' (Clean: '{cleanFontName}'). Initiating Google Fonts download...");
 
             try
             {
                 string formattedFamily = FormatFontFamilyForUrl(fontFamily);
                 string cssUrl = $"https://fonts.googleapis.com/css2?family={formattedFamily}";
 
+                Debug.Log($"[Figma2Unity FontPipeline] Pinging Google Fonts API URL: '{cssUrl}'");
+
                 // 2. Fetch Google Fonts CSS stylesheet
                 string cssContent = DownloadStringWithUserAgent(cssUrl);
                 if (string.IsNullOrEmpty(cssContent))
                 {
-                    Debug.LogWarning($"[GoogleFontFetcher] Empty CSS response for Google Font: '{fontFamily}'");
+                    Debug.LogError($"[Figma2Unity FontPipeline] Empty CSS response received from Google Fonts API for '{fontFamily}' at '{cssUrl}'");
                     return null;
                 }
 
@@ -70,29 +79,42 @@ namespace Figma2Unity.Editor.Fonts
 
                 if (!match.Success)
                 {
-                    Debug.LogWarning($"[GoogleFontFetcher] Could not find TTF font URL in CSS for font '{fontFamily}'");
+                    Debug.LogError($"[Figma2Unity FontPipeline] Could not extract TTF font URL from CSS for font '{fontFamily}'. CSS content snippet:\n{cssContent.Substring(0, Math.Min(200, cssContent.Length))}");
                     return null;
                 }
 
                 string fontFileUrl = match.Groups[1].Value;
+                Debug.Log($"[Figma2Unity FontPipeline] TTF URL extracted: '{fontFileUrl}'. Downloading binary data...");
 
                 // 4. Download binary font bytes
                 byte[] fontData = DownloadDataWithUserAgent(fontFileUrl);
                 if (fontData == null || fontData.Length == 0)
                 {
-                    Debug.LogWarning($"[GoogleFontFetcher] Failed to download TTF binary data from {fontFileUrl}");
+                    Debug.LogError($"[Figma2Unity FontPipeline] Failed to download binary font data from '{fontFileUrl}'");
                     return null;
                 }
 
+                Debug.Log($"[Figma2Unity FontPipeline] Downloaded {fontData.Length} bytes of TTF data. Saving to disk at '{targetPath}'...");
+
                 // 5. Save TTF file using sanitized path helper
                 UIToolkitGenerator.SaveAssetBytes(targetPath, fontData);
-                Debug.Log($"[GoogleFontFetcher] Successfully downloaded Google Font '{fontFamily}' to {targetPath}");
+
+                bool fileSaved = File.Exists(targetPath);
+                if (fileSaved)
+                {
+                    Debug.Log($"[Figma2Unity FontPipeline] TTF saved successfully to disk: '{targetPath}' (Size: {new FileInfo(targetPath).Length} bytes)");
+                }
+                else
+                {
+                    Debug.LogError($"[Figma2Unity FontPipeline] File.WriteAllBytes failed! Target file does not exist at '{targetPath}' after saving!");
+                    return null;
+                }
 
                 return targetPath;
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"[GoogleFontFetcher] Failed to fetch Google Font '{fontFamily}': {ex.Message}");
+                Debug.LogError($"[Figma2Unity FontPipeline] Exception during Google Font fetch for '{fontFamily}': {ex.Message}\n{ex.StackTrace}");
                 return null;
             }
         }
@@ -113,7 +135,7 @@ namespace Figma2Unity.Editor.Fonts
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"[GoogleFontFetcher] HTTP GET request failed for {url}: {ex.Message}");
+                Debug.LogError($"[Figma2Unity FontPipeline] HTTP GET request failed for '{url}': {ex.Message}");
                 return null;
             }
         }
@@ -135,7 +157,7 @@ namespace Figma2Unity.Editor.Fonts
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"[GoogleFontFetcher] HTTP binary download failed for {url}: {ex.Message}");
+                Debug.LogError($"[Figma2Unity FontPipeline] HTTP binary download failed for '{url}': {ex.Message}");
                 return null;
             }
         }
