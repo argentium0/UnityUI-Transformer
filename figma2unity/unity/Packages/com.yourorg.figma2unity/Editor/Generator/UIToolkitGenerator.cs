@@ -23,6 +23,41 @@ namespace Figma2Unity.Editor.Generator
             public List<string> UXMLPaths = new List<string>();
         }
 
+        public static void RegenerateStylesheet(string stagingFolderPath)
+        {
+            string irJsonPath = Path.Combine(stagingFolderPath, "ir-document.json");
+            if (!File.Exists(irJsonPath))
+            {
+                Debug.LogWarning($"[UIToolkitGenerator] No ir-document.json found at {stagingFolderPath}");
+                return;
+            }
+
+            try
+            {
+                string jsonContent = File.ReadAllText(irJsonPath);
+                var settings = new Newtonsoft.Json.JsonSerializerSettings();
+                settings.Converters.Add(new Figma2Unity.Editor.Schema.IRNodeConverter());
+                var document = Newtonsoft.Json.JsonConvert.DeserializeObject<IRDocument>(jsonContent, settings);
+
+                if (document != null)
+                {
+                    string packageName = Path.GetFileName(stagingFolderPath);
+                    if (string.IsNullOrEmpty(packageName) || packageName == "Temp" || packageName == "Figma2UnitySync")
+                    {
+                        packageName = "LiveSyncPackage";
+                    }
+                    string destFolder = Path.Combine("Assets", "Figma2Unity", "Generated", packageName);
+                    Generate(document, destFolder, packageName);
+                    Debug.Log($"[UIToolkitGenerator] Successfully regenerated stylesheet from {stagingFolderPath}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[UIToolkitGenerator] Failed to regenerate stylesheet: {ex.Message}");
+            }
+        }
+
+
         public static GenerationResult Generate(IRDocument document, string destinationFolder, string packageName)
         {
             if (document == null)
@@ -164,8 +199,8 @@ namespace Figma2Unity.Editor.Generator
             {
                 foreach (var rootNode in document.rootNodes)
                 {
-                    // Pass true for isRoot on top-level frames, false for parentAutoLayout
-                    GenerateNodeStylesRecursive(rootNode, sb, generatedClasses, document, true, false, packageName);
+                    // Pass true for isRoot on top-level frames, "NONE" for parentLayoutMode
+                    GenerateNodeStylesRecursive(rootNode, sb, generatedClasses, document, true, "NONE", packageName);
                 }
             }
 
@@ -178,7 +213,7 @@ namespace Figma2Unity.Editor.Generator
             HashSet<string> generatedClasses,
             IRDocument document,
             bool isRoot,
-            bool isInsideAutoLayoutParent,
+            string parentLayoutMode,
             string packageName)
         {
             if (node == null) return;
@@ -191,6 +226,7 @@ namespace Figma2Unity.Editor.Generator
 
                 // 1. POSITIONING & BOUNDS
                 bool isAbsolute = (node.layoutPositioning == "ABSOLUTE");
+                bool inAutoLayoutFlow = parentLayoutMode != "NONE" && !isAbsolute;
 
                 if (isRoot)
                 {
@@ -202,13 +238,20 @@ namespace Figma2Unity.Editor.Generator
                     sb.AppendLine("    flex-shrink: 0;");
                     sb.AppendLine("    overflow: hidden;");
                 }
-                else if (isInsideAutoLayoutParent && !isAbsolute)
+                else if (inAutoLayoutFlow)
                 {
                     // Child inside an Auto-Layout parent participating in flex flow
                     sb.AppendLine("    position: relative;");
-                    if (node.autoLayout != null && node.autoLayout.layoutGrow > 0)
+                    if (node.autoLayout != null)
                     {
-                        sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "    flex-grow: {0};", node.autoLayout.layoutGrow));
+                        if (node.autoLayout.layoutGrow > 0)
+                        {
+                            sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "    flex-grow: {0};", node.autoLayout.layoutGrow));
+                        }
+                        if (node.autoLayout.layoutAlign == "STRETCH")
+                        {
+                            sb.AppendLine("    align-self: stretch;");
+                        }
                     }
                 }
                 else
@@ -224,13 +267,41 @@ namespace Figma2Unity.Editor.Generator
 
                 if (!isRoot && node.bounds != null)
                 {
-                    if (node.bounds.width > 0)
+                    bool fixWidth = true;
+                    bool fixHeight = true;
+
+                    if (inAutoLayoutFlow)
+                    {
+                        if (parentLayoutMode == "HORIZONTAL" && node.autoLayout?.layoutGrow > 0) fixWidth = false;
+                        if (parentLayoutMode == "VERTICAL" && node.autoLayout?.layoutAlign == "STRETCH") fixWidth = false;
+
+                        if (parentLayoutMode == "VERTICAL" && node.autoLayout?.layoutGrow > 0) fixHeight = false;
+                        if (parentLayoutMode == "HORIZONTAL" && node.autoLayout?.layoutAlign == "STRETCH") fixHeight = false;
+                    }
+
+                    bool isContainer = node.autoLayout != null && node.autoLayout.layoutMode != "NONE";
+                    if (isContainer)
+                    {
+                        if (node.autoLayout.layoutMode == "HORIZONTAL" && node.autoLayout.primaryAxisSizingMode == "AUTO") fixWidth = false;
+                        if (node.autoLayout.layoutMode == "VERTICAL" && node.autoLayout.counterAxisSizingMode == "AUTO") fixWidth = false;
+
+                        if (node.autoLayout.layoutMode == "VERTICAL" && node.autoLayout.primaryAxisSizingMode == "AUTO") fixHeight = false;
+                        if (node.autoLayout.layoutMode == "HORIZONTAL" && node.autoLayout.counterAxisSizingMode == "AUTO") fixHeight = false;
+                    }
+
+                    if (node is TextNode tNode)
+                    {
+                        if (tNode.textAutoResize == "WIDTH_AND_HEIGHT") fixWidth = false;
+                        if (tNode.textAutoResize == "WIDTH_AND_HEIGHT" || tNode.textAutoResize == "HEIGHT") fixHeight = false;
+                    }
+
+                    if (fixWidth && node.bounds.width > 0)
                     {
                         sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "    width: {0}px;", node.bounds.width));
                         sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "    min-width: {0}px;", node.bounds.width));
                         sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "    max-width: {0}px;", node.bounds.width));
                     }
-                    if (node.bounds.height > 0)
+                    if (fixHeight && node.bounds.height > 0)
                     {
                         sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "    height: {0}px;", node.bounds.height));
                         sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "    min-height: {0}px;", node.bounds.height));
@@ -565,35 +636,35 @@ namespace Figma2Unity.Editor.Generator
                 sb.AppendLine();
             }
 
-            // Recurse children passing whether current node is an Auto-Layout container
-            bool currentIsAutoLayout = node.autoLayout != null && !string.IsNullOrEmpty(node.autoLayout.layoutMode) && node.autoLayout.layoutMode != "NONE";
+            // Recurse children passing current layout mode
+            string currentLayoutMode = (node.autoLayout != null && !string.IsNullOrEmpty(node.autoLayout.layoutMode)) ? node.autoLayout.layoutMode : "NONE";
 
             if (node is FrameNode frameNode && frameNode.children != null)
             {
                 foreach (var child in frameNode.children)
                 {
-                    GenerateNodeStylesRecursive(child, sb, generatedClasses, document, false, currentIsAutoLayout, packageName);
+                    GenerateNodeStylesRecursive(child, sb, generatedClasses, document, false, currentLayoutMode, packageName);
                 }
             }
             else if (node is GroupNode groupNode && groupNode.children != null)
             {
                 foreach (var child in groupNode.children)
                 {
-                    GenerateNodeStylesRecursive(child, sb, generatedClasses, document, false, currentIsAutoLayout, packageName);
+                    GenerateNodeStylesRecursive(child, sb, generatedClasses, document, false, currentLayoutMode, packageName);
                 }
             }
             else if (node is ComponentInstanceNode compNode && compNode.children != null)
             {
                 foreach (var child in compNode.children)
                 {
-                    GenerateNodeStylesRecursive(child, sb, generatedClasses, document, false, currentIsAutoLayout, packageName);
+                    GenerateNodeStylesRecursive(child, sb, generatedClasses, document, false, currentLayoutMode, packageName);
                 }
             }
             else if (node is UnsupportedNode unsupNode && unsupNode.children != null)
             {
                 foreach (var child in unsupNode.children)
                 {
-                    GenerateNodeStylesRecursive(child, sb, generatedClasses, document, false, currentIsAutoLayout, packageName);
+                    GenerateNodeStylesRecursive(child, sb, generatedClasses, document, false, currentLayoutMode, packageName);
                 }
             }
         }

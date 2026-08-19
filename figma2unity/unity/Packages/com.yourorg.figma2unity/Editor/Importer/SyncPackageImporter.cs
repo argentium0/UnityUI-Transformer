@@ -37,72 +37,12 @@ namespace Figma2Unity.Editor.Importer
 #endif
         }
 
-        public static void ProcessStagingPackageSync(string lockFilePath)
+        [MenuItem("Figma2Unity/Force Live Sync Refresh")]
+        public static void ForceLiveSyncRefresh()
         {
 #if UNITY_EDITOR
-            if (!File.Exists(lockFilePath)) return;
-
-            string stagingPackageFolder = Path.GetDirectoryName(lockFilePath);
-            string packageName = Path.GetFileName(stagingPackageFolder);
-            if (string.IsNullOrEmpty(packageName)) packageName = "StagingPackage";
-
-            string irJsonPath = Path.Combine(stagingPackageFolder, "ir-document.json");
-            if (!File.Exists(irJsonPath)) return;
-
-            // 1. Force Close UI Builder Editor Windows physically to prevent MissingReferenceException
-            ForceCloseUIBuilderWindows();
-
-            // 2. Copy Assets from Temp/Figma2UnitySync/{packageName} into Assets/Figma2UnityImports/{packageName}
-            string destFolder = Path.Combine("Assets", "Figma2UnityImports", packageName);
-            if (!Directory.Exists(destFolder))
-            {
-                Directory.CreateDirectory(destFolder);
-            }
-
-            string stagingExportsDir = Path.Combine(stagingPackageFolder, "exports");
-            if (Directory.Exists(stagingExportsDir))
-            {
-                string destExportsDir = Path.Combine(destFolder, "exports");
-                CopyDirectoryRecursive(stagingExportsDir, destExportsDir);
-            }
-
-            // 3. First Refresh & Configure TextureImporters
+            Debug.Log("[Figma2Unity Importer] Manually refreshing AssetDatabase to trigger live sync...");
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-            ConfigureRasterAssets(destFolder);
-
-            // 4. Generate Layout: Parse JSON in memory
-            string jsonContent = File.ReadAllText(irJsonPath);
-            IRDocument document = ParseIRDocument(jsonContent);
-            if (document == null) return;
-
-            Figma2Unity.Editor.Reporting.FigmaImportLogger.BeginSession(packageName, document.schemaVersion);
-
-            string generatedFolder = Path.Combine("Assets", "Figma2Unity", "Generated", packageName);
-
-            // 5. Generate UXML & USS with AssetPathToGUID validation
-            UIToolkitGenerator.Generate(document, generatedFolder, packageName);
-            UGUIGenerator.Generate(document, generatedFolder, packageName);
-
-            TokenAssetGenerator.GenerateTokenAssets(document, generatedFolder);
-            string fontsFolder = Path.Combine("Assets", "Figma2Unity", "Generated", "Fonts");
-            ResolveTextNodeFonts(document, fontsFolder);
-
-            var reportData = Figma2Unity.Editor.Reporting.FigmaImportLogger.EndSession();
-            Figma2Unity.Editor.Reporting.ReportGenerator.GenerateReports(reportData, generatedFolder);
-
-            // 6. Final Refresh
-            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-
-            try
-            {
-                File.Delete(lockFilePath);
-            }
-            catch
-            {
-                // Ignore lock cleanup error
-            }
-
-            Debug.Log($"[Figma2Unity Importer] Bulletproof staging import complete for '{packageName}'!");
 #endif
         }
 

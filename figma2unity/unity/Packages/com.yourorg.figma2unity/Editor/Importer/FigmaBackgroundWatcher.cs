@@ -4,6 +4,7 @@ using System.IO;
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEngine;
+using Figma2Unity.Editor.Generator;
 
 namespace Figma2Unity.Editor.Importer
 {
@@ -18,6 +19,7 @@ namespace Figma2Unity.Editor.Importer
 
             // Subscribe to domain reload and editor shutdown cleanup events
             AssemblyReloadEvents.beforeAssemblyReload += OnBeforeAssemblyReload;
+            AssemblyReloadEvents.afterAssemblyReload += OnAfterAssemblyReload;
             EditorApplication.quitting += OnEditorQuitting;
         }
 
@@ -53,12 +55,12 @@ namespace Figma2Unity.Editor.Importer
             }
         }
 
-        private static double _lastTriggerTime = 0;
+        private static DateTime _lastTriggerTime = DateTime.MinValue;
 
         private static void OnSyncCompleteDetected(object sender, FileSystemEventArgs e)
         {
-            double currentTime = EditorApplication.timeSinceStartup;
-            if (currentTime - _lastTriggerTime < 1.0)
+            DateTime currentTime = DateTime.UtcNow;
+            if ((currentTime - _lastTriggerTime).TotalSeconds < 1.0)
             {
                 return;
             }
@@ -73,7 +75,10 @@ namespace Figma2Unity.Editor.Importer
                 try
                 {
                     Debug.Log($"[Figma2Unity BackgroundWatcher] Detected 'sync.complete' at '{lockFilePath}'. Initiating bulletproof import sequence...");
-                    SyncPackageImporter.ProcessStagingPackageSync(lockFilePath);
+                    string stagingFolder = Path.GetDirectoryName(lockFilePath);
+                    UIToolkitGenerator.RegenerateStylesheet(stagingFolder);
+                    
+                    try { File.Delete(lockFilePath); } catch { }
                 }
                 catch (Exception ex)
                 {
@@ -85,6 +90,14 @@ namespace Figma2Unity.Editor.Importer
         private static void OnBeforeAssemblyReload()
         {
             DisposeWatcher();
+        }
+
+        private static void OnAfterAssemblyReload()
+        {
+            if (_watcher == null)
+            {
+                InitializeWatcher();
+            }
         }
 
         private static void OnEditorQuitting()

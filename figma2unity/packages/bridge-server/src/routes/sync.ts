@@ -1,76 +1,48 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import fs from 'fs';
+import { FastifyInstance } from 'fastify';
+import fs from 'fs/promises';
 import path from 'path';
+
 import { getConfig } from '../config';
 
-export interface SyncAssetPayload {
-  path: string;
-  data: string; // base64 encoded
-}
-
-export interface SyncRequestPayload {
-  packageName?: string;
-  document: any;
-  assets?: SyncAssetPayload[];
-}
-
-export async function registerSyncRoute(fastify: FastifyInstance): Promise<void> {
-  fastify.post('/sync', async (request: FastifyRequest, reply: FastifyReply) => {
+// Changed to a named export matching server.ts expectations
+export async function registerSyncRoute(fastify: FastifyInstance) {
+  fastify.post('/sync', async (request, reply) => {
     const config = getConfig();
-    const body = request.body as SyncRequestPayload;
+    const STAGING_DIR = path.resolve(config.unityProjectPath, 'Temp/Figma2UnitySync');
+    const { document, assets } = request.body as any;
 
-    if (!body || !body.document) {
-      return reply.status(400).send({
-        success: false,
-        message: 'Invalid payload: missing "document" property.',
-      });
+    await fs.rm(STAGING_DIR, { recursive: true, force: true }).catch(() => { });
+    await fs.mkdir(path.join(STAGING_DIR, 'exports', 'images'), { recursive: true });
+    await fs.mkdir(path.join(STAGING_DIR, 'exports', 'vectors'), { recursive: true });
+
+    if (assets && assets.length > 0) {
+      await Promise.all(assets.map(async (asset: any) => {
+        const fileName = path.basename(asset.path);
+        const buffer = Buffer.from(asset.data, 'base64');
+        const isSvg = fileName.endsWith('.svg');
+        const folder = isSvg ? 'vectors' : 'images';
+        await fs.writeFile(path.join(STAGING_DIR, 'exports', folder, fileName), buffer);
+      }));
     }
 
-    const packageName = body.packageName || 'FigmaSyncPackage';
-    const targetFolder = path.join(config.unityProjectPath, packageName);
+    // Write the document
+    await fs.writeFile(path.join(STAGING_DIR, 'ir-document.json'), JSON.stringify(document, null, 2));
 
-    if (!fs.existsSync(targetFolder)) {
-      fs.mkdirSync(targetFolder, { recursive: true });
-    }
+    // Wait 50ms to ensure OS-level file handles are fully flushed before the C# watcher fires
+    await new Promise(resolve => setTimeout(resolve, 50));
 
-    // 1. Write IR document JSON
-    const irDocPath = path.join(targetFolder, 'ir-document.json');
-    fs.writeFileSync(irDocPath, JSON.stringify(body.document, null, 2), 'utf-8');
-    let filesWritten = 1;
+    // Create the completion trigger file
+    await fs.writeFile(path.join(STAGING_DIR, 'sync.complete'), '');
 
-    // 2. Write base64 asset files
-    if (body.assets && Array.isArray(body.assets)) {
-      for (const asset of body.assets) {
-        if (!asset.path || !asset.data) continue;
-
-        const assetFullPath = path.join(targetFolder, asset.path);
-        const parentDir = path.dirname(assetFullPath);
-
-        if (!fs.existsSync(parentDir)) {
-          fs.mkdirSync(parentDir, { recursive: true });
-        }
-
-        let base64Data = asset.data;
-        if (base64Data.includes(',')) {
-          base64Data = base64Data.split(',')[1];
-        }
-        base64Data = base64Data.replace(/\s/g, '');
-
-        const buffer = Buffer.from(base64Data, 'base64');
-        fs.writeFileSync(assetFullPath, buffer);
-        filesWritten++;
-      }
-    }
-
-    // 3. Write 0-byte sync.complete lock file to trigger C# background watcher safely
-    const completeLockPath = path.join(targetFolder, 'sync.complete');
-    fs.writeFileSync(completeLockPath, '', 'utf-8');
-
-    return reply.status(200).send({
-      success: true,
-      message: `Successfully synced package '${packageName}' to staging directory.`,
-      outputPath: targetFolder,
-      filesWritten,
-    });
+    return { success: true, message: 'Live sync payload successfully written to Unity.' };
   });
+}
+
+async function exists(p: string) {
+  try {
+    await fs.access(p);
+    return true;
+  } catch {
+    return false;
+  }
 }
