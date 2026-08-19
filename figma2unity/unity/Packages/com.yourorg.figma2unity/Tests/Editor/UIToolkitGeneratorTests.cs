@@ -437,5 +437,15 @@ namespace Figma2Unity.Tests.Editor
             if (System.IO.File.Exists(expectedPath)) System.IO.File.Delete(expectedPath);
             if (System.IO.Directory.Exists(tempDir)) System.IO.Directory.Delete(tempDir, true);
         }
+
+        [Test]
+        public void GoogleFontFetcher_FormatsFontFamilyAndCleanNameCorrectly()
+        {
+            string urlFormat = Figma2Unity.Editor.Fonts.GoogleFontFetcher.FormatFontFamilyForUrl("Irish Grover");
+            Assert.AreEqual("Irish+Grover", urlFormat);
+
+            string cleanName = Figma2Unity.Editor.Fonts.GoogleFontFetcher.GetCleanFontName("Irish Grover");
+            Assert.AreEqual("IrishGrover", cleanName);
+        }
     }
 }

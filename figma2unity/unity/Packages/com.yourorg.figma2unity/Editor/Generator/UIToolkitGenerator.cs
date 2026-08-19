@@ -97,6 +97,11 @@ namespace Figma2Unity.Editor.Generator
                     }
 
                     string destFolder = Path.Combine("Assets", "Figma2Unity", "Generated", packageName);
+                    string fontsFolder = Path.Combine("Assets", "Figma2Unity", "Generated", "Fonts");
+                    
+                    // Pre-fetch missing fonts from Google Fonts and bake assets before USS generation
+                    SyncPackageImporter.ResolveTextNodeFonts(document, fontsFolder);
+
                     Generate(document, destFolder, packageName);
                     Debug.Log($"[UIToolkitGenerator] Successfully regenerated stylesheet from {stagingFolderPath}");
                 }

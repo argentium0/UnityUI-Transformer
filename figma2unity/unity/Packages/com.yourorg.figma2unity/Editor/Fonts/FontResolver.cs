@@ -119,7 +119,25 @@ namespace Figma2Unity.Editor.Fonts
                 }
             }
 
-            // 3. If no raw font file exists, log structured missing font warning and return fallback result without TMP_FontAsset
+            // 3. If no raw font file exists locally, attempt to query Google Fonts API and download the TTF asset
+            string downloadedTtfPath = GoogleFontFetcher.FetchGoogleFont(fontFamily);
+            if (!string.IsNullOrEmpty(downloadedTtfPath))
+            {
+                AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+                Font downloadedFont = AssetDatabase.LoadAssetAtPath<Font>(downloadedTtfPath);
+                if (downloadedFont != null)
+                {
+                    FontAssetBaker.BakeFontAsset(downloadedFont, downloadedTtfPath, fontsFolder);
+                    result.Success = true;
+                    result.WasGenerated = true;
+                    result.FontAsset = downloadedFont;
+                    result.AssetPath = downloadedTtfPath;
+                    result.LogMessage = $"Successfully downloaded and baked Google Font '{fontFamily}' at {downloadedTtfPath}";
+                    return result;
+                }
+            }
+
+            // 4. If no raw font file exists or fetch fails, log structured missing font warning and return fallback result
             string structuredWarning = $"[Figma2Unity] Missing Font: '{fontFamily}' ({fontWeight}) on node '{nodeName}' (ID: {nodeId})";
             Debug.LogWarning(structuredWarning);
 
