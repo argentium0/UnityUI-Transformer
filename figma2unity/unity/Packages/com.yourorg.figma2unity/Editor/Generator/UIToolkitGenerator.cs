@@ -424,7 +424,6 @@ namespace Figma2Unity.Editor.Generator
                 }
 
                 // 2. IMAGE & VECTOR ASSET LINKING
-                bool isImageAsset = false;
                 string pkg = string.IsNullOrEmpty(packageName) ? "SyncPackage" : packageName;
 
                 // For rasterized nodes that map to an image fill (like 'Rectangle 1')
@@ -451,7 +450,6 @@ namespace Figma2Unity.Editor.Generator
                     
                     sb.AppendLine($"    background-image: url('{targetUrl}');");
                     sb.AppendLine("    -unity-background-scale-mode: stretch-to-fill;");
-                    isImageAsset = true;
                 }
                 else if (node is VectorNode vecNode && !string.IsNullOrEmpty(vecNode.svgAssetRef))
                 {
@@ -461,7 +459,6 @@ namespace Figma2Unity.Editor.Generator
                     
                     sb.AppendLine($"    background-image: url('{targetUrl}');");
                     sb.AppendLine("    -unity-background-scale-mode: scale-to-fit;");
-                    isImageAsset = true;
                 }
 
                 // 2.5 FILLS & TRANSPARENT BACKGROUNDS
@@ -607,7 +604,6 @@ namespace Figma2Unity.Editor.Generator
                 if (node is TextNode textNode)
                 {
                     sb.AppendLine("    white-space: normal;");
-                    sb.AppendLine("    -unity-text-wrap: wrap;");
 
                     float? fontSize = textNode.fontSize;
                     string matchedFontSizeVar = null;
@@ -706,6 +702,46 @@ namespace Figma2Unity.Editor.Generator
             return Path.Combine(dir, sanitizedFileName).Replace('\\', '/');
         }
 
+        public static void SaveAssetBytes(string targetFilePath, byte[] bytes)
+        {
+            if (string.IsNullOrEmpty(targetFilePath) || bytes == null) return;
+            string sanitizedPath = SanitizeAssetPath(targetFilePath);
+            string directory = Path.GetDirectoryName(sanitizedPath);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+            File.WriteAllBytes(sanitizedPath, bytes);
+        }
+
+        public static string TranslateCssProperty(string propertyName, string propertyValue)
+        {
+            if (string.IsNullOrEmpty(propertyName)) return null;
+
+            string key = propertyName.Trim().ToLowerInvariant();
+            if (key == "text-wrap" || key == "-unity-text-wrap")
+            {
+                string val = (propertyValue ?? "").Trim().ToLowerInvariant();
+                if (val == "nowrap" || val == "none")
+                {
+                    return "white-space: nowrap;";
+                }
+                return "white-space: normal;";
+            }
+
+            if (key == "white-space")
+            {
+                string val = (propertyValue ?? "").Trim().ToLowerInvariant();
+                if (val == "nowrap" || val == "none")
+                {
+                    return "white-space: nowrap;";
+                }
+                return "white-space: normal;";
+            }
+
+            return $"{propertyName}: {propertyValue};";
+        }
+
         public static string TranslateUnityTextAlign(string horizontalAlign, string verticalAlign)
         {
             string vStr = "middle";
@@ -741,16 +777,21 @@ namespace Figma2Unity.Editor.Generator
             string assetPath = null;
 #if UNITY_EDITOR
             var resolution = Figma2Unity.Editor.Fonts.FontResolver.ResolveFontForTextNode(textNode);
-            if (resolution != null && !string.IsNullOrEmpty(resolution.AssetPath))
+            if (resolution != null && resolution.Success && !resolution.UsedFallback && !string.IsNullOrEmpty(resolution.AssetPath))
             {
-                assetPath = resolution.AssetPath;
+                // Ensure assetPath is a valid standard font asset and not a TMP_FontAsset (.asset) or LiberationSans SDF
+                if (!resolution.AssetPath.EndsWith("SDF.asset", StringComparison.OrdinalIgnoreCase) &&
+                    !resolution.AssetPath.Contains("LiberationSans"))
+                {
+                    assetPath = resolution.AssetPath;
+                }
             }
 #endif
 
             if (string.IsNullOrEmpty(assetPath))
             {
-                string cleanFontName = Regex.Replace(textNode.fontFamily, @"\s+", "");
-                assetPath = $"Assets/Fonts/{cleanFontName}.asset";
+                // Omit font definition when custom font is missing so UI Toolkit falls back to system default font cleanly
+                return null;
             }
 
             assetPath = assetPath.Replace('\\', '/');

@@ -119,20 +119,7 @@ namespace Figma2Unity.Editor.Fonts
                 }
             }
 
-            // 3. If no raw font file exists, assign default TMP Font Asset (LiberationSans SDF) and log structured warning
-            UnityEngine.Object fallbackAsset = null;
-            string fallbackPath = null;
-            foreach (string guid in tmpGuids)
-            {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
-                if (path.Contains("LiberationSans") || path.Contains("Default"))
-                {
-                    fallbackAsset = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(path);
-                    fallbackPath = path;
-                    break;
-                }
-            }
-
+            // 3. If no raw font file exists, log structured missing font warning and return fallback result without TMP_FontAsset
             string structuredWarning = $"[Figma2Unity] Missing Font: '{fontFamily}' ({fontWeight}) on node '{nodeName}' (ID: {nodeId})";
             Debug.LogWarning(structuredWarning);
 
@@ -144,12 +131,12 @@ namespace Figma2Unity.Editor.Fonts
                 NodeId = nodeId
             });
 
-            Figma2Unity.Editor.Reporting.FigmaImportLogger.LogMissingFont(fontFamily, fontWeight, nodeName, nodeId, fallbackPath ?? "LiberationSans SDF");
+            Figma2Unity.Editor.Reporting.FigmaImportLogger.LogMissingFont(fontFamily, fontWeight, nodeName, nodeId, "System Default");
 
             result.Success = true;
             result.UsedFallback = true;
-            result.FontAsset = fallbackAsset;
-            result.AssetPath = fallbackPath;
+            result.FontAsset = null;
+            result.AssetPath = null;
             result.LogMessage = structuredWarning;
 #endif
 

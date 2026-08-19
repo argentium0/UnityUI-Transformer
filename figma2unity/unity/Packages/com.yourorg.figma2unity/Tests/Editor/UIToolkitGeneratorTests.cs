@@ -405,13 +405,37 @@ namespace Figma2Unity.Tests.Editor
 
             string uss = USSStyleGenerator.GenerateUSS(doc, "TestPkg");
 
-            Assert.Contains("-unity-font-definition: url('", uss);
+            Assert.IsFalse(uss.Contains("-unity-text-wrap: wrap;"));
             Assert.Contains("-unity-text-align: middle-center;", uss);
             Assert.Contains("white-space: normal;", uss);
             Assert.Contains("border-bottom-width: 1px;", uss);
 
             string uxml = UXMLTreeGenerator.GenerateUXML(doc.rootNodes[0], "style.uss");
             Assert.Contains("<u>Underlined Hello</u>", uxml);
+        }
+
+        [Test]
+        public void TranslateCssProperty_InterceptsTextWrapToWhiteSpaceNormal()
+        {
+            Assert.AreEqual("white-space: normal;", UIToolkitGenerator.TranslateCssProperty("text-wrap", "wrap"));
+            Assert.AreEqual("white-space: normal;", UIToolkitGenerator.TranslateCssProperty("-unity-text-wrap", "wrap"));
+            Assert.AreEqual("white-space: nowrap;", UIToolkitGenerator.TranslateCssProperty("text-wrap", "nowrap"));
+        }
+
+        [Test]
+        public void SaveAssetBytes_SanitizesFileNameBeforeSaving()
+        {
+            string tempDir = System.IO.Path.Combine(UnityEngine.Application.temporaryCachePath, "SanitizeSaveTest");
+            string targetPath = System.IO.Path.Combine(tempDir, "exports/images/1_6@1x.png");
+            byte[] data = new byte[] { 1, 2, 3, 4 };
+
+            UIToolkitGenerator.SaveAssetBytes(targetPath, data);
+
+            string expectedPath = System.IO.Path.Combine(tempDir, "exports/images/1_6_1x.png");
+            Assert.IsTrue(System.IO.File.Exists(expectedPath));
+
+            if (System.IO.File.Exists(expectedPath)) System.IO.File.Delete(expectedPath);
+            if (System.IO.Directory.Exists(tempDir)) System.IO.Directory.Delete(tempDir, true);
         }
     }
 }
