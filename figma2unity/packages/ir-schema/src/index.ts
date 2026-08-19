@@ -143,6 +143,7 @@ const BaseNodeFields = {
   bounds: BoundsSchema,
   autoLayout: AutoLayoutSchema.optional(),
   layoutPositioning: z.enum(['AUTO', 'ABSOLUTE']).default('AUTO'),
+  layoutAlign: z.enum(['STRETCH', 'INHERIT']).default('INHERIT'),
   constraints: ConstraintsSchema.optional(),
   fills: z.array(FillSchema).default([]),
   strokes: z.array(StrokeSchema).default([]),
@@ -191,6 +192,7 @@ export const FrameNodeSchema = z.object({
   type: z.literal('FRAME'),
   children: z.array(z.lazy(() => IRNodeSchema)).default([]),
   clipsContent: z.boolean().default(false),
+  imageAssetRef: z.string().optional(),
 });
 
 export const GroupNodeSchema = z.object({

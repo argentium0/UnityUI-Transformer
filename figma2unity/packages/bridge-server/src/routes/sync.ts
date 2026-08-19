@@ -6,7 +6,7 @@ import path from 'path';
 import { getConfig } from '../config';
 
 export async function registerSyncRoute(fastify: FastifyInstance) {
-  fastify.post('/sync', async (request, reply) => {
+  fastify.post('/sync', { bodyLimit: 50 * 1024 * 1024 }, async (request, reply) => {
     const config = getConfig();
     const STAGING_DIR = path.resolve(config.unityProjectPath, 'Temp/Figma2UnitySync');
     const { document, assets } = (request.body || {}) as any;

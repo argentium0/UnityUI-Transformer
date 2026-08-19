@@ -55,7 +55,7 @@ describe('ZipPackager & AssetExporter Integration', () => {
     const assetExporter = new AssetExporter();
     const { assets, metrics } = await assetExporter.exportAssets(traverser.getVisitedNodes());
 
-    expect(metrics.vectorCount).toBe(1); // StarIcon exported as SVG
+    expect(metrics.vectorCount).toBe(1); // StarIcon rasterized as PNG
     expect(metrics.rasterCount).toBe(1); // CoverImage exported as PNG 1x/2x/3x
 
     // 3. Package into .f2u.zip
@@ -66,7 +66,9 @@ describe('ZipPackager & AssetExporter Integration', () => {
     const { document, fileList } = ZipPackager.readF2uZip(zipBytes);
 
     expect(fileList).toContain('ir-document.json');
-    expect(fileList).toContain('exports/vectors/10_2.svg');
+    expect(fileList).toContain('exports/images/10_2@1x.png');
+    expect(fileList).toContain('exports/images/10_2@2x.png');
+    expect(fileList).toContain('exports/images/10_2@3x.png');
     expect(fileList).toContain('exports/images/10_3@1x.png');
     expect(fileList).toContain('exports/images/10_3@2x.png');
     expect(fileList).toContain('exports/images/10_3@3x.png');

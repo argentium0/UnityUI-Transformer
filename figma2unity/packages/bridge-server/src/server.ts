@@ -5,6 +5,7 @@ import { registerSyncRoute } from './routes/sync';
 export function createServer(): FastifyInstance {
   const app = Fastify({
     logger: true,
+    bodyLimit: 50 * 1024 * 1024, // 50 MB
   });
 
   // Register CORS plugin allowing requests from Figma plugin iframe origin

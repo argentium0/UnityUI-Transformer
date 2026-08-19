@@ -179,20 +179,35 @@ export class NodeTraverser {
       case 'FRAME':
       case 'SECTION': {
         this.incrementCount('FRAME');
-        const children = this.convertChildren((node as FrameNode).children);
-        const autoLayout = this.extractAutoLayout(node as FrameNode);
-        return {
+        const frameNode = node as FrameNode;
+        const children = this.convertChildren(frameNode.children);
+        const autoLayout = this.extractAutoLayout(frameNode);
+
+        // P0 Fix 3: Detect FRAME nodes with IMAGE fills and emit imageAssetRef
+        const frameFills = Array.isArray(frameNode.fills) ? frameNode.fills : [];
+        const frameHasImageFill = frameFills.some((f: Paint) => f.type === 'IMAGE');
+        const frameResult: any = {
           ...baseFields,
           type: 'FRAME',
           autoLayout,
-          clipsContent: (node as FrameNode).clipsContent ?? false,
+          clipsContent: frameNode.clipsContent ?? false,
           children,
         };
+        if (frameHasImageFill) {
+          frameResult.imageAssetRef = `images/${node.id.replace(/[:/]/g, '_')}@1x.png`;
+        }
+        return frameResult;
       }
 
       case 'GROUP': {
         this.incrementCount('GROUP');
-        const children = this.convertChildren((node as GroupNode).children);
+        const groupNode = node as GroupNode;
+        // P1 Fix 4: Relativize group children coordinates to the group's own origin
+        const children = this.convertChildrenRelativeToParent(
+          groupNode.children,
+          groupNode.x,
+          groupNode.y
+        );
         return {
           ...baseFields,
           type: 'GROUP',
@@ -209,7 +224,7 @@ export class NodeTraverser {
           return {
             ...baseFields,
             type: 'IMAGE',
-            imageAssetRef: `images/${node.id.replace(/[:/]/g, '_')}.png`,
+            imageAssetRef: `images/${node.id.replace(/[:/]/g, '_')}@1x.png`,
             scaleMode: 'FILL',
           };
         }
@@ -237,7 +252,7 @@ export class NodeTraverser {
         return {
           ...baseFields,
           type: 'VECTOR',
-          svgAssetRef: `vectors/${node.id.replace(/[:/]/g, '_')}.svg`,
+          svgAssetRef: `images/${node.id.replace(/[:/]/g, '_')}@1x.png`,
         };
       }
 
@@ -294,6 +309,31 @@ export class NodeTraverser {
     return result;
   }
 
+  /**
+   * P1 Fix 4: For GROUP children, Figma reports x/y in the parent's coordinate space
+   * (absolute relative to the root frame), not relative to the group itself.
+   * We must subtract the group's own origin to get local offsets.
+   */
+  private convertChildrenRelativeToParent(
+    children: readonly SceneNode[] | undefined,
+    parentX: number,
+    parentY: number
+  ): IRNode[] {
+    if (!children) return [];
+    const result: IRNode[] = [];
+    for (const child of children) {
+      if (child.visible !== false) {
+        const irNode = this.convertNode(child);
+        if (irNode.bounds) {
+          irNode.bounds.x -= parentX;
+          irNode.bounds.y -= parentY;
+        }
+        result.push(irNode);
+      }
+    }
+    return result;
+  }
+
   private extractBaseFields(node: SceneNode) {
     const bounds: Bounds = {
       x: node.x ?? 0,
@@ -307,6 +347,9 @@ export class NodeTraverser {
     const cornerRadius = this.extractCornerRadius(node);
     const effects = this.extractEffects(node);
 
+    // P1 Fix 5: Extract layoutAlign as a per-child property (not from autoLayout)
+    const layoutAlign = 'layoutAlign' in node ? ((node as any).layoutAlign as string) || 'INHERIT' : 'INHERIT';
+
     return {
       id: node.id,
       name: node.name,
@@ -315,6 +358,7 @@ export class NodeTraverser {
       rotation: 'rotation' in node ? (node as any).rotation : 0,
       bounds,
       layoutPositioning: 'layoutPositioning' in node ? ((node as any).layoutPositioning as 'AUTO' | 'ABSOLUTE') || 'AUTO' : 'AUTO',
+      layoutAlign,
       fills,
       strokes,
       cornerRadius,

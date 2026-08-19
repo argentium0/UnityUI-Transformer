@@ -1,7 +1,7 @@
 export interface ExportedAsset {
   path: string;
   data: Uint8Array;
-  mimeType: 'image/png' | 'image/svg+xml';
+  mimeType: 'image/png';
 }
 
 export interface ExportMetrics {
@@ -21,19 +21,29 @@ export class AssetExporter {
       const isImage = node.type === 'RECTANGLE' && Array.isArray((node as any).fills) && (node as any).fills.some((f: any) => f.type === 'IMAGE');
       const isUnsupported = !['FRAME', 'SECTION', 'GROUP', 'RECTANGLE', 'ELLIPSE', 'TEXT', 'INSTANCE', 'COMPONENT', 'COMPONENT_SET'].includes(node.type) && !isVector;
 
+      // P0 Fix 3: FRAME/SECTION nodes with IMAGE fills need raster export too
+      const isFrameWithImageFill = ['FRAME', 'SECTION'].includes(node.type) &&
+        Array.isArray((node as any).fills) &&
+        (node as any).fills.some((f: any) => f.type === 'IMAGE');
+
       if (isVector) {
+        // P0 Fix 2: Rasterize vectors to PNG instead of exporting SVG
+        // Unity UI Toolkit cannot render raw SVG files in background-image
         try {
-          const svgData = await this.exportSvg(node);
-          assets.push({
-            path: `exports/vectors/${sanitizedId}.svg`,
-            data: svgData,
-            mimeType: 'image/svg+xml',
-          });
+          const [png1x, png2x, png3x] = await Promise.all([
+            this.exportPng(node, 1),
+            this.exportPng(node, 2),
+            this.exportPng(node, 3),
+          ]);
+
+          assets.push({ path: `exports/images/${sanitizedId}@1x.png`, data: png1x, mimeType: 'image/png' });
+          assets.push({ path: `exports/images/${sanitizedId}@2x.png`, data: png2x, mimeType: 'image/png' });
+          assets.push({ path: `exports/images/${sanitizedId}@3x.png`, data: png3x, mimeType: 'image/png' });
           metrics.vectorCount++;
         } catch {
           metrics.failedCount++;
         }
-      } else if (isImage || isUnsupported) {
+      } else if (isImage || isUnsupported || isFrameWithImageFill) {
         try {
           const [png1x, png2x, png3x] = await Promise.all([
             this.exportPng(node, 1),
@@ -52,14 +62,6 @@ export class AssetExporter {
     }
 
     return { assets, metrics };
-  }
-
-  private async exportSvg(node: SceneNode): Promise<Uint8Array> {
-    if (typeof node.exportAsync === 'function') {
-      return await node.exportAsync({ format: 'SVG' });
-    }
-    // Mock fallback for test environment
-    return this.encodeString(`<svg xmlns="http://www.w3.org/2000/svg" width="${node.width}" height="${node.height}"></svg>`);
   }
 
   private async exportPng(node: SceneNode, scale: number): Promise<Uint8Array> {
@@ -84,4 +86,5 @@ export class AssetExporter {
     return bytes;
   }
 }
+
 

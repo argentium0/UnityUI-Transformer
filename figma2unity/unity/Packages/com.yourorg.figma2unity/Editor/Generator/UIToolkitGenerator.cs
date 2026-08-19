@@ -322,11 +322,25 @@ namespace Figma2Unity.Editor.Generator
                     bool fixWidth = true;
                     bool fixHeight = true;
 
-                    // Allow stretching in cross axis by omitting fixed size
-                    if (inAutoLayoutFlow && node.autoLayout != null)
+                    // P1 Fix 5: Read layoutAlign from the node directly, not from node.autoLayout
+                    if (inAutoLayoutFlow)
                     {
-                        if (parentLayoutMode == "VERTICAL" && node.autoLayout.layoutAlign == "STRETCH") fixWidth = false;
-                        if (parentLayoutMode == "HORIZONTAL" && node.autoLayout.layoutAlign == "STRETCH") fixHeight = false;
+                        string childLayoutAlign = node.layoutAlign ?? "INHERIT";
+                        
+                        if (parentLayoutMode == "VERTICAL")
+                        {
+                            // In vertical container, width is cross-axis
+                            if (childLayoutAlign == "STRETCH") fixWidth = false;
+                            // If child has layoutGrow > 0, it grows in height (primary axis)
+                            if (node.autoLayout != null && node.autoLayout.layoutGrow > 0) fixHeight = false;
+                        }
+                        else if (parentLayoutMode == "HORIZONTAL")
+                        {
+                            // In horizontal container, height is cross-axis
+                            if (childLayoutAlign == "STRETCH") fixHeight = false;
+                            // If child has layoutGrow > 0, it grows in width (primary axis)
+                            if (node.autoLayout != null && node.autoLayout.layoutGrow > 0) fixWidth = false;
+                        }
                     }
 
                     if (fixWidth && node.bounds.width >= 0)
@@ -416,10 +430,17 @@ namespace Figma2Unity.Editor.Generator
                 bool hasImageFill = node.fills != null && node.fills.Exists(f => f.type == "IMAGE");
                 string imageRef = (node as ImageNode)?.imageAssetRef;
                 
+                // P0 Fix 3: FrameNodes with IMAGE fills also carry imageAssetRef
+                if (string.IsNullOrEmpty(imageRef) && node is FrameNode frameNodeImg)
+                {
+                    imageRef = frameNodeImg.imageAssetRef;
+                }
+                
                 if (string.IsNullOrEmpty(imageRef) && hasImageFill)
                 {
+                    // P0 Fix 1: Use @1x suffix to match actual filenames on disk
                     string sanitizedId = node.id.Replace(":", "_").Replace("/", "_");
-                    imageRef = $"images/{sanitizedId}.png";
+                    imageRef = $"images/{sanitizedId}@1x.png";
                 }
 
                 if (!string.IsNullOrEmpty(imageRef))
@@ -434,6 +455,7 @@ namespace Figma2Unity.Editor.Generator
                 }
                 else if (node is VectorNode vecNode && !string.IsNullOrEmpty(vecNode.svgAssetRef))
                 {
+                    // P0 Fix 2: Vector assets are now rasterized to PNG, but svgAssetRef still holds the path
                     string cleanAssetRef = vecNode.svgAssetRef.Replace('\\', '/');
                     string relAssetPath = $"Assets/Figma2UnityImports/{pkg}/{cleanAssetRef}".Replace('\\', '/');
                     string targetUrl = $"project://database/{relAssetPath}";
