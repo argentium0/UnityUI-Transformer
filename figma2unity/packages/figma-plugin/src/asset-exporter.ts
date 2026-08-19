@@ -10,13 +10,19 @@ export interface ExportMetrics {
   failedCount: number;
 }
 
+export function sanitizeAssetFileName(fileName: string): string {
+  if (!fileName) return fileName;
+  let sanitized = fileName.replace(/[@\s]/g, '_');
+  return sanitized.replace(/[^a-zA-Z0-9_.-]/g, '');
+}
+
 export class AssetExporter {
-  public async exportAssets(nodes: SceneNode[]): Promise<{ assets: ExportedAsset[]; metrics: ExportMetrics }> {
+  public async exportAssets(nodes: readonly SceneNode[]): Promise<{ assets: ExportedAsset[]; metrics: ExportMetrics }> {
     const assets: ExportedAsset[] = [];
     const metrics: ExportMetrics = { rasterCount: 0, vectorCount: 0, failedCount: 0 };
 
     for (const node of nodes) {
-      const sanitizedId = node.id.replace(/[:/]/g, '_');
+      const rawId = node.id.replace(/[:/]/g, '_');
       const isVector = ['VECTOR', 'STAR', 'POLYGON', 'BOOLEAN_OPERATION', 'LINE'].includes(node.type);
       const isImage = node.type === 'RECTANGLE' && Array.isArray((node as any).fills) && (node as any).fills.some((f: any) => f.type === 'IMAGE');
       const isUnsupported = !['FRAME', 'SECTION', 'GROUP', 'RECTANGLE', 'ELLIPSE', 'TEXT', 'INSTANCE', 'COMPONENT', 'COMPONENT_SET'].includes(node.type) && !isVector;
@@ -36,9 +42,9 @@ export class AssetExporter {
             this.exportPng(node, 3),
           ]);
 
-          assets.push({ path: `exports/images/${sanitizedId}@1x.png`, data: png1x, mimeType: 'image/png' });
-          assets.push({ path: `exports/images/${sanitizedId}@2x.png`, data: png2x, mimeType: 'image/png' });
-          assets.push({ path: `exports/images/${sanitizedId}@3x.png`, data: png3x, mimeType: 'image/png' });
+          assets.push({ path: `exports/images/${sanitizeAssetFileName(`${rawId}_1x.png`)}`, data: png1x, mimeType: 'image/png' });
+          assets.push({ path: `exports/images/${sanitizeAssetFileName(`${rawId}_2x.png`)}`, data: png2x, mimeType: 'image/png' });
+          assets.push({ path: `exports/images/${sanitizeAssetFileName(`${rawId}_3x.png`)}`, data: png3x, mimeType: 'image/png' });
           metrics.vectorCount++;
         } catch {
           metrics.failedCount++;
@@ -51,9 +57,9 @@ export class AssetExporter {
             this.exportPng(node, 3),
           ]);
 
-          assets.push({ path: `exports/images/${sanitizedId}@1x.png`, data: png1x, mimeType: 'image/png' });
-          assets.push({ path: `exports/images/${sanitizedId}@2x.png`, data: png2x, mimeType: 'image/png' });
-          assets.push({ path: `exports/images/${sanitizedId}@3x.png`, data: png3x, mimeType: 'image/png' });
+          assets.push({ path: `exports/images/${sanitizeAssetFileName(`${rawId}_1x.png`)}`, data: png1x, mimeType: 'image/png' });
+          assets.push({ path: `exports/images/${sanitizeAssetFileName(`${rawId}_2x.png`)}`, data: png2x, mimeType: 'image/png' });
+          assets.push({ path: `exports/images/${sanitizeAssetFileName(`${rawId}_3x.png`)}`, data: png3x, mimeType: 'image/png' });
           metrics.rasterCount++;
         } catch {
           metrics.failedCount++;

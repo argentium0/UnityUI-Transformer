@@ -73,7 +73,12 @@ namespace Figma2Unity.Editor.Generator
             if (node is TextNode textNode)
             {
                 element = new XElement(UiNs + "Label");
-                element.SetAttributeValue("text", textNode.characters ?? string.Empty);
+                string textContent = textNode.characters ?? string.Empty;
+                if (string.Equals(textNode.textDecoration, "UNDERLINE", StringComparison.OrdinalIgnoreCase))
+                {
+                    textContent = $"<u>{textContent}</u>";
+                }
+                element.SetAttributeValue("text", textContent);
             }
             else if (node is ImageNode imageNode)
             {

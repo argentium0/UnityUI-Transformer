@@ -66,12 +66,12 @@ describe('ZipPackager & AssetExporter Integration', () => {
     const { document, fileList } = ZipPackager.readF2uZip(zipBytes);
 
     expect(fileList).toContain('ir-document.json');
-    expect(fileList).toContain('exports/images/10_2@1x.png');
-    expect(fileList).toContain('exports/images/10_2@2x.png');
-    expect(fileList).toContain('exports/images/10_2@3x.png');
-    expect(fileList).toContain('exports/images/10_3@1x.png');
-    expect(fileList).toContain('exports/images/10_3@2x.png');
-    expect(fileList).toContain('exports/images/10_3@3x.png');
+    expect(fileList).toContain('exports/images/10_2_1x.png');
+    expect(fileList).toContain('exports/images/10_2_2x.png');
+    expect(fileList).toContain('exports/images/10_2_3x.png');
+    expect(fileList).toContain('exports/images/10_3_1x.png');
+    expect(fileList).toContain('exports/images/10_3_2x.png');
+    expect(fileList).toContain('exports/images/10_3_3x.png');
 
     // Validate unzipped document against Zod IRDocumentSchema
     const parseResult = IRDocumentSchema.safeParse(document);

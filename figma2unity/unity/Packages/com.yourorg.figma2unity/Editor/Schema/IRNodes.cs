@@ -61,6 +61,8 @@ namespace Figma2Unity.Editor.Schema
         public float? fontSize { get; set; }
         public float? fontWeight { get; set; }
         public string textAlign { get; set; } = "LEFT";
+        public string textAlignVertical { get; set; } = "TOP";
+        public string textDecoration { get; set; } = "NONE";
         public string textAutoResize { get; set; } = "NONE";
     }
 

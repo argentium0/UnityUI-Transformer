@@ -177,6 +177,8 @@ export const TextNodeSchema = z.object({
   fontSize: z.number().optional(),
   fontWeight: z.number().optional(),
   textAlign: z.enum(['LEFT', 'CENTER', 'RIGHT', 'JUSTIFY']).default('LEFT'),
+  textAlignVertical: z.enum(['TOP', 'CENTER', 'BOTTOM']).default('TOP'),
+  textDecoration: z.enum(['NONE', 'UNDERLINE', 'STRIKETHROUGH']).default('NONE'),
   textAutoResize: z.enum(['NONE', 'WIDTH_AND_HEIGHT', 'HEIGHT']).default('NONE'),
 });
 

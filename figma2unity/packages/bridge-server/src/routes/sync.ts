@@ -5,6 +5,12 @@ import path from 'path';
 
 import { getConfig } from '../config';
 
+function sanitizeAssetFileName(fileName: string): string {
+  if (!fileName) return fileName;
+  let sanitized = fileName.replace(/[@\s]/g, '_');
+  return sanitized.replace(/[^a-zA-Z0-9_.-]/g, '');
+}
+
 export async function registerSyncRoute(fastify: FastifyInstance) {
   fastify.post('/sync', { bodyLimit: 50 * 1024 * 1024 }, async (request, reply) => {
     const config = getConfig();
@@ -20,7 +26,8 @@ export async function registerSyncRoute(fastify: FastifyInstance) {
     if (assets && Array.isArray(assets) && assets.length > 0) {
       // Execute file writing synchronously with pure binary Buffer to guarantee binary integrity
       assets.forEach((asset: any) => {
-        const fileName = path.basename(asset.path || asset.name);
+        const rawFileName = path.basename(asset.path || asset.name);
+        const fileName = sanitizeAssetFileName(rawFileName);
         let buffer: Buffer;
 
         if (Buffer.isBuffer(asset.data)) {

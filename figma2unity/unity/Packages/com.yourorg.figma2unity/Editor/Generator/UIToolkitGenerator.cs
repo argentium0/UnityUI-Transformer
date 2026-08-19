@@ -64,7 +64,8 @@ namespace Figma2Unity.Editor.Generator
                         foreach (string file in Directory.GetFiles(stagingExports, "*.*", SearchOption.AllDirectories))
                         {
                             string relative = file.Substring(stagingExports.Length).TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-                            string destFile = Path.Combine(destImports, relative);
+                            string sanitizedRelative = SanitizeAssetPath(relative);
+                            string destFile = Path.Combine(destImports, sanitizedRelative);
                             string destDir = Path.GetDirectoryName(destFile);
                             if (!Directory.Exists(destDir)) Directory.CreateDirectory(destDir);
                             File.Copy(file, destFile, true);
@@ -438,14 +439,13 @@ namespace Figma2Unity.Editor.Generator
                 
                 if (string.IsNullOrEmpty(imageRef) && hasImageFill)
                 {
-                    // P0 Fix 1: Use @1x suffix to match actual filenames on disk
                     string sanitizedId = node.id.Replace(":", "_").Replace("/", "_");
-                    imageRef = $"images/{sanitizedId}@1x.png";
+                    imageRef = $"images/{sanitizedId}_1x.png";
                 }
 
                 if (!string.IsNullOrEmpty(imageRef))
                 {
-                    string cleanAssetRef = imageRef.Replace('\\', '/');
+                    string cleanAssetRef = SanitizeAssetPath(imageRef);
                     string relAssetPath = $"Assets/Figma2UnityImports/{pkg}/{cleanAssetRef}".Replace('\\', '/');
                     string targetUrl = $"project://database/{relAssetPath}";
                     
@@ -455,8 +455,7 @@ namespace Figma2Unity.Editor.Generator
                 }
                 else if (node is VectorNode vecNode && !string.IsNullOrEmpty(vecNode.svgAssetRef))
                 {
-                    // P0 Fix 2: Vector assets are now rasterized to PNG, but svgAssetRef still holds the path
-                    string cleanAssetRef = vecNode.svgAssetRef.Replace('\\', '/');
+                    string cleanAssetRef = SanitizeAssetPath(vecNode.svgAssetRef);
                     string relAssetPath = $"Assets/Figma2UnityImports/{pkg}/{cleanAssetRef}".Replace('\\', '/');
                     string targetUrl = $"project://database/{relAssetPath}";
                     
@@ -634,7 +633,11 @@ namespace Figma2Unity.Editor.Generator
 
                     if (!string.IsNullOrEmpty(textNode.fontFamily))
                     {
-                        sb.AppendLine(string.Format("    font-family: \"{0}\";", textNode.fontFamily));
+                        string fontUrl = ResolveFontDefinitionUrl(textNode);
+                        if (!string.IsNullOrEmpty(fontUrl))
+                        {
+                            sb.AppendLine($"    -unity-font-definition: url('{fontUrl}');");
+                        }
                     }
 
                     if (textNode.fontWeight.HasValue && textNode.fontWeight.Value >= 600)
@@ -642,23 +645,13 @@ namespace Figma2Unity.Editor.Generator
                         sb.AppendLine("    -unity-font-style: bold;");
                     }
 
-                    if (!string.IsNullOrEmpty(textNode.textAlign))
+                    string unityTextAlign = TranslateUnityTextAlign(textNode.textAlign, textNode.textAlignVertical);
+                    sb.AppendLine($"    -unity-text-align: {unityTextAlign};");
+
+                    if (string.Equals(textNode.textDecoration, "UNDERLINE", StringComparison.OrdinalIgnoreCase))
                     {
-                        switch (textNode.textAlign.ToUpperInvariant())
-                        {
-                            case "LEFT":
-                                sb.AppendLine("    -unity-text-align: middle-left;");
-                                break;
-                            case "CENTER":
-                                sb.AppendLine("    -unity-text-align: middle-center;");
-                                break;
-                            case "RIGHT":
-                                sb.AppendLine("    -unity-text-align: middle-right;");
-                                break;
-                            case "JUSTIFY":
-                                sb.AppendLine("    -unity-text-align: middle-left;");
-                                break;
-                        }
+                        sb.AppendLine("    border-bottom-width: 1px;");
+                        sb.AppendLine("    border-bottom-color: initial;");
                     }
                 }
 
@@ -697,6 +690,73 @@ namespace Figma2Unity.Editor.Generator
                     GenerateNodeStylesRecursive(child, sb, generatedClasses, document, false, currentLayoutMode, packageName);
                 }
             }
+        }
+
+        public static string SanitizeAssetPath(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return path;
+            string dir = Path.GetDirectoryName(path);
+            string fileName = Path.GetFileName(path);
+            if (string.IsNullOrEmpty(fileName)) return path.Replace('\\', '/');
+
+            string sanitizedFileName = Regex.Replace(fileName, @"[@\s]", "_");
+            sanitizedFileName = Regex.Replace(sanitizedFileName, @"[^a-zA-Z0-9_.-]", "");
+
+            if (string.IsNullOrEmpty(dir)) return sanitizedFileName;
+            return Path.Combine(dir, sanitizedFileName).Replace('\\', '/');
+        }
+
+        public static string TranslateUnityTextAlign(string horizontalAlign, string verticalAlign)
+        {
+            string vStr = "middle";
+            if (!string.IsNullOrEmpty(verticalAlign))
+            {
+                switch (verticalAlign.ToUpperInvariant())
+                {
+                    case "TOP": vStr = "upper"; break;
+                    case "CENTER": case "MIDDLE": vStr = "middle"; break;
+                    case "BOTTOM": vStr = "lower"; break;
+                }
+            }
+
+            string hStr = "left";
+            if (!string.IsNullOrEmpty(horizontalAlign))
+            {
+                switch (horizontalAlign.ToUpperInvariant())
+                {
+                    case "LEFT": hStr = "left"; break;
+                    case "CENTER": hStr = "center"; break;
+                    case "RIGHT": hStr = "right"; break;
+                    case "JUSTIFY": hStr = "left"; break;
+                }
+            }
+
+            return $"{vStr}-{hStr}";
+        }
+
+        public static string ResolveFontDefinitionUrl(TextNode textNode)
+        {
+            if (textNode == null || string.IsNullOrEmpty(textNode.fontFamily)) return null;
+
+            string assetPath = null;
+#if UNITY_EDITOR
+            var resolution = Figma2Unity.Editor.Fonts.FontResolver.ResolveFontForTextNode(textNode);
+            if (resolution != null && !string.IsNullOrEmpty(resolution.AssetPath))
+            {
+                assetPath = resolution.AssetPath;
+            }
+#endif
+
+            if (string.IsNullOrEmpty(assetPath))
+            {
+                string cleanFontName = Regex.Replace(textNode.fontFamily, @"\s+", "");
+                assetPath = $"Assets/Fonts/{cleanFontName}.asset";
+            }
+
+            assetPath = assetPath.Replace('\\', '/');
+            return assetPath.StartsWith("project://", StringComparison.OrdinalIgnoreCase)
+                ? assetPath
+                : $"project://database/{assetPath}";
         }
 
         public static string SanitizeTokenVarName(string tokenName)

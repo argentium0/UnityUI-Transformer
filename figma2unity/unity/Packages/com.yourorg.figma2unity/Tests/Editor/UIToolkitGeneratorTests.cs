@@ -362,5 +362,56 @@ namespace Figma2Unity.Tests.Editor
             Assert.AreEqual("SubtitleLabel", report[0].NodeName);
             Assert.AreEqual("node-101", report[0].NodeId);
         }
+
+        [Test]
+        public void SanitizeAssetPath_StripsSpecialCharactersAndSpaces()
+        {
+            string sanitized1 = UIToolkitGenerator.SanitizeAssetPath("exports/images/1_6@1x.png");
+            Assert.AreEqual("exports/images/1_6_1x.png", sanitized1);
+
+            string sanitized2 = UIToolkitGenerator.SanitizeAssetPath("exports/images/my image@2x.png");
+            Assert.AreEqual("exports/images/my_image_2x.png", sanitized2);
+        }
+
+        [Test]
+        public void TranslateUnityTextAlign_MapsAlignmentMatrixCorrectly()
+        {
+            Assert.AreEqual("upper-left", UIToolkitGenerator.TranslateUnityTextAlign("LEFT", "TOP"));
+            Assert.AreEqual("middle-center", UIToolkitGenerator.TranslateUnityTextAlign("CENTER", "CENTER"));
+            Assert.AreEqual("lower-right", UIToolkitGenerator.TranslateUnityTextAlign("RIGHT", "BOTTOM"));
+            Assert.AreEqual("middle-left", UIToolkitGenerator.TranslateUnityTextAlign("JUSTIFY", "MIDDLE"));
+        }
+
+        [Test]
+        public void USSStyleGenerator_TextDecorationAndFontDefinition_GeneratesCorrectUSSActions()
+        {
+            var doc = new IRDocument
+            {
+                rootNodes = new List<IRNode>
+                {
+                    new TextNode
+                    {
+                        id = "text-1",
+                        name = "UnderlineText",
+                        type = "TEXT",
+                        characters = "Underlined Hello",
+                        fontFamily = "Irish Grover",
+                        textDecoration = "UNDERLINE",
+                        textAlign = "CENTER",
+                        textAlignVertical = "MIDDLE"
+                    }
+                }
+            };
+
+            string uss = USSStyleGenerator.GenerateUSS(doc, "TestPkg");
+
+            Assert.Contains("-unity-font-definition: url('", uss);
+            Assert.Contains("-unity-text-align: middle-center;", uss);
+            Assert.Contains("white-space: normal;", uss);
+            Assert.Contains("border-bottom-width: 1px;", uss);
+
+            string uxml = UXMLTreeGenerator.GenerateUXML(doc.rootNodes[0], "style.uss");
+            Assert.Contains("<u>Underlined Hello</u>", uxml);
+        }
     }
 }

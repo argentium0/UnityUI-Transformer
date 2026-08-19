@@ -12,6 +12,7 @@ import type {
   CornerRadius,
   EffectValue,
 } from '@figma2unity/ir-schema';
+import { sanitizeAssetFileName } from './asset-exporter.js';
 
 export interface TraversalSummary {
   totalNodes: number;
@@ -194,7 +195,7 @@ export class NodeTraverser {
           children,
         };
         if (frameHasImageFill) {
-          frameResult.imageAssetRef = `images/${node.id.replace(/[:/]/g, '_')}@1x.png`;
+          frameResult.imageAssetRef = `images/${sanitizeAssetFileName(`${node.id.replace(/[:/]/g, '_')}_1x.png`)}`;
         }
         return frameResult;
       }
@@ -224,7 +225,7 @@ export class NodeTraverser {
           return {
             ...baseFields,
             type: 'IMAGE',
-            imageAssetRef: `images/${node.id.replace(/[:/]/g, '_')}@1x.png`,
+            imageAssetRef: `images/${sanitizeAssetFileName(`${node.id.replace(/[:/]/g, '_')}_1x.png`)}`,
             scaleMode: 'FILL',
           };
         }
@@ -252,7 +253,7 @@ export class NodeTraverser {
         return {
           ...baseFields,
           type: 'VECTOR',
-          svgAssetRef: `images/${node.id.replace(/[:/]/g, '_')}@1x.png`,
+          svgAssetRef: `images/${sanitizeAssetFileName(`${node.id.replace(/[:/]/g, '_')}_1x.png`)}`,
         };
       }
 
@@ -266,6 +267,8 @@ export class NodeTraverser {
           fontFamily: typeof textNode.fontName !== 'symbol' ? textNode.fontName?.family : undefined,
           fontSize: typeof textNode.fontSize === 'number' ? textNode.fontSize : undefined,
           textAlign: typeof textNode.textAlignHorizontal === 'string' ? (textNode.textAlignHorizontal as any) : 'LEFT',
+          textAlignVertical: typeof textNode.textAlignVertical === 'string' ? (textNode.textAlignVertical as any) : 'TOP',
+          textDecoration: typeof textNode.textDecoration === 'string' ? (textNode.textDecoration as any) : 'NONE',
         };
       }
 

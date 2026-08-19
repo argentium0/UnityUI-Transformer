@@ -328,7 +328,9 @@ namespace Figma2Unity.Editor.Importer
 
             foreach (string file in Directory.GetFiles(sourceDir))
             {
-                string destFile = Path.Combine(destinationDir, Path.GetFileName(file));
+                string rawFileName = Path.GetFileName(file);
+                string sanitizedFileName = UIToolkitGenerator.SanitizeAssetPath(rawFileName);
+                string destFile = Path.Combine(destinationDir, sanitizedFileName);
                 File.Copy(file, destFile, true);
             }
 
