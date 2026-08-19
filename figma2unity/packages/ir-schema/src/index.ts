@@ -247,3 +247,50 @@ export const IRDocumentSchema = z.object({
   rootNodes: z.array(IRNodeSchema),
 });
 export type IRDocument = z.infer<typeof IRDocumentSchema>;
+
+// ==========================================
+// Normalized Intermediate Representation (UI_IR)
+// ==========================================
+
+export const NormalizedBoundsSchema = z.object({
+  x: z.number(),
+  y: z.number(),
+  width: z.number(),
+  height: z.number(),
+});
+export type NormalizedBounds = z.infer<typeof NormalizedBoundsSchema>;
+
+export const TextAlignHorizontalSchema = z.enum(['LEFT', 'CENTER', 'RIGHT', 'JUSTIFIED']);
+export type TextAlignHorizontal = z.infer<typeof TextAlignHorizontalSchema>;
+
+export const TextAlignVerticalSchema = z.enum(['TOP', 'CENTER', 'BOTTOM']);
+export type TextAlignVertical = z.infer<typeof TextAlignVerticalSchema>;
+
+export const NormalizedVisualSchema = z.object({
+  background: z.string().nullable().default(null),
+  opacity: z.number().min(0).max(1).default(1),
+  cornerRadius: z.number().default(0),
+  textAlignHorizontal: TextAlignHorizontalSchema.optional(),
+  textAlignVertical: TextAlignVerticalSchema.optional(),
+});
+export type NormalizedVisual = z.infer<typeof NormalizedVisualSchema>;
+
+
+export const NormalizedElementKindSchema = z.enum(['panel', 'text', 'image', 'button']);
+export type NormalizedElementKind = z.infer<typeof NormalizedElementKindSchema>;
+
+export const NormalizedElementSchema = z.object({
+  id: z.string(),
+  kind: NormalizedElementKindSchema,
+  bounds: NormalizedBoundsSchema,
+  visual: NormalizedVisualSchema,
+  text: z.string().optional(),
+  asset: z.string().optional(),
+});
+export type NormalizedElement = z.infer<typeof NormalizedElementSchema>;
+
+export const NormalizedUIIRSchema = z.object({
+  elements: z.array(NormalizedElementSchema),
+});
+export type NormalizedUIIR = z.infer<typeof NormalizedUIIRSchema>;
+

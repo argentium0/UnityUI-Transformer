@@ -73,6 +73,25 @@ namespace Figma2Unity.Editor.Generator
                         // Force Unity to register the new images BEFORE we generate the USS files
 #if UNITY_EDITOR
                         AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+                        
+                        // Enforce TextureImporter settings so UI Toolkit successfully reads them
+                        string[] imageFiles = Directory.GetFiles(destImports, "*.*", SearchOption.AllDirectories);
+                        foreach (string imgFile in imageFiles)
+                        {
+                            string ext = Path.GetExtension(imgFile).ToLowerInvariant();
+                            if (ext != ".png" && ext != ".jpg" && ext != ".jpeg") continue;
+
+                            string assetPath = imgFile.Replace('\\', '/');
+                            TextureImporter importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
+                            if (importer != null)
+                            {
+                                importer.textureType = TextureImporterType.Sprite;
+                                importer.spriteImportMode = SpriteImportMode.Single;
+                                importer.alphaIsTransparency = true;
+                                importer.SaveAndReimport();
+                                AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
+                            }
+                        }
 #endif
                     }
 
