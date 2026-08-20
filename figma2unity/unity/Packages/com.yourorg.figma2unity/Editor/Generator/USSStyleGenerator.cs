@@ -117,6 +117,11 @@ namespace Figma2Unity.Editor.Generator
                                       (node.name != null && node.name.IndexOf("icon", StringComparison.OrdinalIgnoreCase) >= 0) ||
                                       node is VectorNode;
 
+                // Flattened Image Kill-Switch Detection (Gradients or Multiple Fills)
+                bool hasGradientFill = node.fills != null && node.fills.Exists(f => f != null && f.type != null && f.type.StartsWith("GRADIENT_", StringComparison.OrdinalIgnoreCase));
+                bool hasMultipleFills = node.fills != null && node.fills.Count > 1;
+                bool requiresFlattenedImage = hasGradientFill || hasMultipleFills;
+
                 // Target the Nested Opacity & Handle Multi-Fills
                 Fill imageFill = node.fills?.Find(f => string.Equals(f.type, "IMAGE", StringComparison.OrdinalIgnoreCase));
                 bool hasImageFill = imageFill != null;
@@ -131,7 +136,7 @@ namespace Figma2Unity.Editor.Generator
                 if (string.IsNullOrEmpty(imageRef) && node is FrameNode frameNodeImg)
                 {
                     imageRef = frameNodeImg.imageAssetRef;
-                    if (string.IsNullOrEmpty(imageRef) && hasImageFill)
+                    if (string.IsNullOrEmpty(imageRef) && (hasImageFill || requiresFlattenedImage))
                     {
                         string sanitizedId = node.id.Replace(":", "_").Replace("/", "_");
                         imageRef = $"images/{sanitizedId}_1x.png";
@@ -142,8 +147,8 @@ namespace Figma2Unity.Editor.Generator
                     }
                 }
 
-                // If node is a vector/icon node and imageRef is still null/empty, route through image pipeline
-                if (string.IsNullOrEmpty(imageRef) && isVectorOrIcon)
+                // If node requires flattened image export (gradient/multi-fill) or is vector/icon and imageRef is empty
+                if (string.IsNullOrEmpty(imageRef) && (requiresFlattenedImage || isVectorOrIcon))
                 {
                     string sanitizedId = node.id.Replace(":", "_").Replace("/", "_");
                     imageRef = $"images/{sanitizedId}_1x.png";
@@ -168,27 +173,31 @@ namespace Figma2Unity.Editor.Generator
                             sb.AppendLine("    -unity-background-scale-mode: stretch-to-fill;");
                         }
 
-                        float dynamicAlpha = 1.0f;
-                        if (imageFill != null && imageFill.opacity.HasValue) {
-                            dynamicAlpha = imageFill.opacity.Value;
-                        } 
-                        else if (imageFill != null && imageFill.color != null && imageFill.color.a < 1.0f) {
-                            dynamicAlpha = imageFill.color.a;
-                        } 
-                        else if (node.opacity < 1.0f) {
-                            dynamicAlpha = node.opacity;
-                        }
+                        // Skip tint calculation for flattened gradient/multi-fill images
+                        if (!requiresFlattenedImage)
+                        {
+                            float dynamicAlpha = 1.0f;
+                            if (imageFill != null && imageFill.opacity.HasValue) {
+                                dynamicAlpha = imageFill.opacity.Value;
+                            } 
+                            else if (imageFill != null && imageFill.color != null && imageFill.color.a < 1.0f) {
+                                dynamicAlpha = imageFill.color.a;
+                            } 
+                            else if (node.opacity < 1.0f) {
+                                dynamicAlpha = node.opacity;
+                            }
 
-                        if (dynamicAlpha < 1.0f) {
-                            sb.AppendLine(string.Format(CultureInfo.InvariantCulture, 
-                                "    -unity-background-image-tint-color: rgba(255, 255, 255, {0:F2});", dynamicAlpha));
+                            if (dynamicAlpha < 1.0f) {
+                                sb.AppendLine(string.Format(CultureInfo.InvariantCulture, 
+                                    "    -unity-background-image-tint-color: rgba(255, 255, 255, {0:F2});", dynamicAlpha));
+                            }
                         }
                     }
                 }
 
                 // 2.5 FILLS & EXPLICIT TRANSPARENCY BY DEFAULT
                 bool hasSolidBgFill = false;
-                if (node.fills != null && node.fills.Count > 0)
+                if (!requiresFlattenedImage && node.fills != null && node.fills.Count > 0)
                 {
                     foreach (var fill in node.fills)
                     {

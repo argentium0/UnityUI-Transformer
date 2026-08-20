@@ -26,15 +26,16 @@ export class AssetExporter {
       const isVector = ['VECTOR', 'STAR', 'POLYGON', 'BOOLEAN_OPERATION', 'LINE'].includes(node.type);
       const fills = Array.isArray((node as any).fills) ? (node as any).fills : [];
       const hasImageFill = fills.some((f: any) => f.type === 'IMAGE');
+      const hasGradientFill = fills.some((f: any) => f && typeof f.type === 'string' && f.type.startsWith('GRADIENT_'));
+      const hasMultipleFills = fills.length > 1;
+      const requiresFlattenedImage = hasGradientFill || hasMultipleFills;
       const isExplicitExport = Array.isArray((node as any).exportSettings) && (node as any).exportSettings.length > 0;
       const isFrame = ['FRAME', 'SECTION'].includes(node.type);
       const hasChildren = 'children' in node && Array.isArray((node as any).children) && (node as any).children.length > 0;
       const isUnsupported = !['FRAME', 'SECTION', 'GROUP', 'RECTANGLE', 'ELLIPSE', 'TEXT', 'INSTANCE', 'COMPONENT', 'COMPONENT_SET'].includes(node.type) && !isVector;
 
-      // STOP FLATTENING FRAMES:
-      // Do not export FRAME/SECTION nodes with children as flattened PNGs,
-      // UNLESS extracting their background image fill asset or explicitly marked for export.
-      if (isFrame && hasChildren && !hasImageFill && !isExplicitExport) {
+      // STOP FLATTENING FRAMES (UNLESS gradient/multi-fill, image fill, or explicit export):
+      if (isFrame && hasChildren && !hasImageFill && !requiresFlattenedImage && !isExplicitExport) {
         continue;
       }
 
@@ -53,7 +54,7 @@ export class AssetExporter {
         } catch {
           metrics.failedCount++;
         }
-      } else if (hasImageFill || isExplicitExport || isUnsupported || (!isFrame && node.type === 'RECTANGLE')) {
+      } else if (hasImageFill || requiresFlattenedImage || isExplicitExport || isUnsupported || (!isFrame && node.type === 'RECTANGLE')) {
         try {
           const [png1x, png2x, png3x] = await Promise.all([
             this.exportImageFillOrNode(node, 1),
