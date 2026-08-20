@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <DefineConstants>$(DefineConstants);UNITY_EDITOR</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\UnityUITransformer.Shims\UnityUITransformer.Shims.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\..\figma2unity\unity\Packages\com.yourorg.figma2unity\Editor\Generator\USSStyleGenerator.cs" Link="Generator\USSStyleGenerator.cs" />
+    <Compile Include="..\..\..\figma2unity\unity\Packages\com.yourorg.figma2unity\Editor\Generator\UIToolkitGenerator.cs" Link="Generator\UIToolkitGenerator.cs" />
+    <Compile Include="..\..\..\figma2unity\unity\Packages\com.yourorg.figma2unity\Editor\Generator\UXMLTreeGenerator.cs" Link="Generator\UXMLTreeGenerator.cs" />
+    <Compile Include="..\..\..\figma2unity\unity\Packages\com.yourorg.figma2unity\Editor\Schema\*.cs" Link="Schema\%(Filename)%(Extension)" />
+    <Compile Include="..\..\..\figma2unity\unity\Packages\com.yourorg.figma2unity\Editor\Reporting\*.cs" Link="Reporting\%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>
