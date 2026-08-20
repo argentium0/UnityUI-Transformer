@@ -130,6 +130,26 @@ namespace Figma2Unity.Editor.Generator
             element.SetAttributeValue("name", node.name ?? "Element");
             element.SetAttributeValue("class", className);
 
+            // If FrameNode has an image fill or imageAssetRef, generate dedicated background image layer as FIRST child
+            if (node is FrameNode frameNodeContainer)
+            {
+                var frameImgFill = frameNodeContainer.fills?.Find(f => string.Equals(f.type, "IMAGE", StringComparison.OrdinalIgnoreCase));
+                string frameImgRef = frameNodeContainer.imageAssetRef;
+                if (string.IsNullOrEmpty(frameImgRef) && frameImgFill != null)
+                {
+                    string sanitizedId = frameNodeContainer.id.Replace(":", "_").Replace("/", "_");
+                    frameImgRef = $"images/{sanitizedId}_1x.png";
+                }
+
+                if (!string.IsNullOrEmpty(frameImgRef))
+                {
+                    var bgLayerElement = new XElement(UiNs + "VisualElement");
+                    bgLayerElement.SetAttributeValue("name", $"{frameNodeContainer.name ?? "Frame"}_BgImage");
+                    bgLayerElement.SetAttributeValue("class", $"{className}-bg-image");
+                    element.Add(bgLayerElement);
+                }
+            }
+
             // Add children for container node types in standard parent-child traversal
             if (node is FrameNode frameNode && frameNode.children != null)
             {
