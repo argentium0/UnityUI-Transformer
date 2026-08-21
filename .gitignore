@@ -27,6 +27,8 @@ Figma2UnityTest/
 **/[Oo]bj/
 **/obj/
 **/bin/
+publish/
+**/publish/
 **/[Bb]uild/
 **/[Bb]uilds/
 **/[Ll]ogs/
@@ -66,8 +68,8 @@ Thumbs.db
 .cursorrules
 
 # Documentation directories
-docs/
-**/docs/
+agent_docs/
+**/agent_docs/
 
 # ------------------------------------------------------------------------------
 # Section 4: Security, Authentication Tokens & Secrets
