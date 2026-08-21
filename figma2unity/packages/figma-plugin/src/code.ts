@@ -8,12 +8,24 @@ figma.ui.onmessage = async (msg: { type: string }) => {
   if (msg.type === 'START_SYNC') {
     try {
       const selection = figma.currentPage.selection;
-      const targetNodes = selection.length > 0 ? selection : figma.currentPage.children;
-      const fileName = (figma.root.name || 'FigmaExport').replace(/[^a-zA-Z0-9_-]/g, '_');
+      if (!selection || selection.length === 0) {
+        figma.ui.postMessage({
+          type: 'TRAVERSAL_ERROR',
+          error: 'Select a frame to sync.',
+        });
+        return;
+      }
+
+      const selectedNode = selection[0];
+      const targetNodes = [selectedNode];
+      const fileName = (selectedNode.name || figma.root.name || 'FigmaExport').replace(/[^a-zA-Z0-9_-]/g, '_');
 
       // 1. Traverse node tree & tokens
       const traverser = new NodeTraverser();
       const traversalResult = await traverser.traverseNodes(targetNodes, fileName);
+
+      // Log outgoing payload to Figma plugin console
+      console.log('[Figma Plugin Payload Output]', JSON.stringify(traversalResult.document, null, 2));
 
       // 2. Export assets (PNGs & SVGs)
       const assetExporter = new AssetExporter();

@@ -191,6 +191,14 @@ export class NodeTraverser {
           ...baseFields,
           type: 'FRAME',
           autoLayout,
+          layoutMode: autoLayout.layoutMode,
+          primaryAxisAlignItems: (autoLayout as any).primaryAxisAlignItems,
+          counterAxisAlignItems: (autoLayout as any).counterAxisAlignItems,
+          paddingLeft: (autoLayout as any).paddingLeft,
+          paddingRight: (autoLayout as any).paddingRight,
+          paddingTop: (autoLayout as any).paddingTop,
+          paddingBottom: (autoLayout as any).paddingBottom,
+          itemSpacing: autoLayout.gap,
           clipsContent: frameNode.clipsContent ?? false,
           children,
         };
@@ -345,6 +353,20 @@ export class NodeTraverser {
       height: node.height ?? 0,
     };
 
+    const absoluteBoundingBox = 'absoluteBoundingBox' in node && (node as any).absoluteBoundingBox
+      ? {
+          x: (node as any).absoluteBoundingBox.x,
+          y: (node as any).absoluteBoundingBox.y,
+          width: (node as any).absoluteBoundingBox.width,
+          height: (node as any).absoluteBoundingBox.height,
+        }
+      : {
+          x: bounds.x,
+          y: bounds.y,
+          width: bounds.width,
+          height: bounds.height,
+        };
+
     const fills = this.extractFills(node);
     const strokes = this.extractStrokes(node);
     const cornerRadius = this.extractCornerRadius(node);
@@ -360,6 +382,7 @@ export class NodeTraverser {
       opacity: 'opacity' in node ? (node as any).opacity : 1,
       rotation: 'rotation' in node ? (node as any).rotation : 0,
       bounds,
+      absoluteBoundingBox,
       layoutPositioning: 'layoutPositioning' in node ? ((node as any).layoutPositioning as 'AUTO' | 'ABSOLUTE') || 'AUTO' : 'AUTO',
       layoutAlign,
       layoutGrow,
@@ -379,15 +402,25 @@ export class NodeTraverser {
       left: node.paddingLeft ?? 0,
     };
 
+    const primaryAxisAlign = ((node as any).primaryAxisAlignItems || (node as any).primaryAxisAlign || 'MIN') as any;
+    const counterAxisAlign = ((node as any).counterAxisAlignItems || (node as any).counterAxisAlign || 'MIN') as any;
+
     return {
       layoutMode,
       gap: node.itemSpacing ?? 0,
+      itemSpacing: node.itemSpacing ?? 0,
       padding,
+      paddingLeft: padding.left,
+      paddingRight: padding.right,
+      paddingTop: padding.top,
+      paddingBottom: padding.bottom,
       primaryAxisSizingMode: (node.primaryAxisSizingMode as 'FIXED' | 'AUTO') || 'FIXED',
       counterAxisSizingMode: (node.counterAxisSizingMode as 'FIXED' | 'AUTO') || 'FIXED',
-      primaryAxisAlign: ((node as any).primaryAxisAlignItems || (node as any).primaryAxisAlign || 'MIN') as any,
-      counterAxisAlign: ((node as any).counterAxisAlignItems || (node as any).counterAxisAlign || 'MIN') as any,
-    };
+      primaryAxisAlign,
+      primaryAxisAlignItems: primaryAxisAlign,
+      counterAxisAlign,
+      counterAxisAlignItems: counterAxisAlign,
+    } as any;
   }
 
   private extractFills(node: SceneNode): Fill[] {
