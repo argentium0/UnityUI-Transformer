@@ -124,25 +124,6 @@ body {
   height: 22px;
 }
 
-.nav-links {
-  display: flex;
-  align-items: center;
-  gap: 32px;
-  list-style: none;
-}
-
-.nav-links a {
-  color: var(--text-muted);
-  text-decoration: none;
-  font-size: 0.92rem;
-  font-weight: 500;
-  transition: color 0.2s ease;
-}
-
-.nav-links a:hover {
-  color: var(--lime);
-}
-
 /* Buttons & CTA with Continuous Drop-Shadow Pulse & Hover Scale */
 .btn-primary {
   display: inline-flex;
@@ -349,7 +330,6 @@ body {
   gap: 28px;
 }
 
-/* Feature Card & Caribbean Green Border Glow Hover */
 .feature-card {
   background: var(--glass-card);
   border: 1px solid var(--glass-border);
@@ -420,7 +400,7 @@ body {
 }
 
 /* ==========================================================================
-   How-It-Works Page Specific Styles
+   How-It-Works Redesigned Timeline Cards & Code Formatting
    ========================================================================== */
 
 .page-header {
@@ -445,142 +425,70 @@ body {
 }
 
 .timeline-section {
-  padding: 40px 0 100px 0;
+  padding: 40px 0 80px 0;
 }
 
 .timeline-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 48px;
+  max-width: 900px;
+  margin: 0 auto;
 }
 
+/* Structured Timeline Step Cards */
 .step-card {
-  background: var(--glass-card);
-  border: 1px solid var(--glass-border);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border-radius: var(--radius-lg);
-  padding: 44px;
-  position: relative;
-  transition: all 0.4s var(--transition-smooth);
+  background-color: var(--gray-50);
+  border-radius: 12px;
+  padding: 2.5rem;
+  margin-bottom: 3rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
 }
 
-.step-card.active-step {
-  border-color: var(--lime);
-  box-shadow: 0 18px 50px rgba(212, 255, 51, 0.22), inset 0 0 24px rgba(212, 255, 51, 0.06);
+.step-card:hover {
+  border-color: var(--border-lime);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4);
 }
 
-.step-badge {
-  display: inline-block;
-  padding: 4px 16px;
-  border-radius: var(--radius-full);
-  background: rgba(212, 255, 51, 0.1);
-  border: 1px solid var(--border-lime);
-  color: var(--lime);
-  font-size: 0.85rem;
+/* Step Header Typography with Gradient Text Effect */
+.step-header-title {
+  font-size: 2rem;
   font-weight: 700;
-  letter-spacing: 0.05em;
-  margin-bottom: 20px;
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, var(--lime) 0%, var(--caribbean-green) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-.step-grid {
-  display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  align-items: center;
-  gap: 40px;
-}
-
-.step-info h2 {
-  font-size: 1.85rem;
-  font-weight: 700;
-  margin-bottom: 16px;
-}
-
-.step-info p {
+.step-card p {
   color: var(--text-muted);
-  font-size: 1rem;
+  font-size: 1.05rem;
   line-height: 1.65;
-  margin-bottom: 24px;
+  margin-bottom: 1.2rem;
 }
 
-.step-bullets {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+/* Code Block Formatting (<pre><code>) */
+pre {
+  background: #111111;
+  font-family: 'Consolas', 'Fira Code', 'Courier New', monospace;
+  color: #a0a0a0;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border-left: 3px solid var(--lime);
+  overflow-x: auto;
+  margin-top: 1.2rem;
+  margin-bottom: 1.2rem;
+  line-height: 1.6;
 }
 
-.step-bullets li {
-  color: var(--text-main);
-  font-size: 0.94rem;
-  display: flex;
-  align-items: center;
-  gap: 10px;
+pre code {
+  font-family: inherit;
+  color: inherit;
+  font-size: 0.9rem;
 }
-
-.step-bullets li::before {
-  content: '✓';
-  color: var(--caribbean-green);
-  font-weight: 700;
-}
-
-/* Code Visual Cards */
-.code-card {
-  background: #14161b;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  font-family: 'Consolas', 'Fira Code', monospace;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-}
-
-.code-header {
-  background: #1a1c23;
-  padding: 12px 18px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-}
-
-.dot.red { background: #ff5f56; }
-.dot.yellow { background: #ffbd2e; }
-.dot.green { background: #27c93f; }
-
-.code-title {
-  margin-left: 10px;
-  font-size: 0.8rem;
-  color: var(--text-subtle);
-}
-
-.code-body {
-  padding: 22px;
-  font-size: 0.88rem;
-  line-height: 1.65;
-  color: #e2e8f0;
-}
-
-.token-comment { color: #64748b; font-style: italic; }
-.token-url { color: #38bdf8; word-break: break-all; }
-.token-key { color: var(--lime); }
-.token-val { color: #f472b6; }
-.token-keyword { color: #c084fc; font-weight: 700; }
-.token-green { color: var(--caribbean-green); font-weight: 700; }
-.token-tag { color: #38bdf8; }
-.token-attr { color: #a7f3d0; }
-.token-class { color: var(--lime); font-weight: 700; }
-.token-prop { color: #94a3b8; }
-.token-num { color: #f472b6; }
 
 /* Final CTA Section */
 .final-cta-section {
-  padding: 60px 0 120px 0;
+  padding: 40px 0 120px 0;
 }
 
 .cta-card {
@@ -590,6 +498,8 @@ body {
   padding: 64px 32px;
   text-align: center;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 0 30px rgba(212, 255, 51, 0.08);
+  max-width: 900px;
+  margin: 0 auto;
 }
 
 .cta-title {
@@ -623,16 +533,16 @@ body {
 
 /* Responsive Breakpoints */
 @media (max-width: 992px) {
-  .hero-grid, .step-grid {
+  .hero-grid {
     grid-template-columns: 1fr;
     text-align: center;
   }
 
-  .hero-text-col, .step-info {
+  .hero-text-col {
     text-align: center;
   }
 
-  .hero-subtitle, .step-info p {
+  .hero-subtitle {
     margin-left: auto;
     margin-right: auto;
   }
@@ -644,14 +554,10 @@ body {
   .hero-geometry-col {
     margin-top: 40px;
   }
-
-  .step-bullets li {
-    justify-content: center;
-  }
 }
 
 @media (max-width: 768px) {
-  .nav-links { display: none; }
   .hero-ctas, .cta-buttons { flex-direction: column; width: 100%; }
   .btn-primary, .btn-secondary { width: 100%; justify-content: center; }
+  .step-card { padding: 1.5rem; }
 }
