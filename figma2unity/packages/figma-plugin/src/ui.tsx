@@ -45,21 +45,34 @@ function App() {
 
             const packageName = msg.fileName ? msg.fileName.replace(/\.f2u\.zip$/i, '') : 'FigmaSyncPackage';
 
-            const res = await fetch('http://localhost:3000/sync', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                packageName,
-                document: msg.document,
-                assets: assetsPayload,
-              }),
-            });
+            let res: Response;
+            try {
+              res = await fetch('http://127.0.0.1:5142/sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  packageName,
+                  document: msg.document,
+                  assets: assetsPayload,
+                }),
+              });
+            } catch {
+              res = await fetch('http://localhost:3000/sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  packageName,
+                  document: msg.document,
+                  assets: assetsPayload,
+                }),
+              });
+            }
 
             const resData = await res.json();
             if (res.ok && resData.success) {
               setLoading(false);
               setSummary(msg.summary);
-              setSyncedStatus(`Synced ${resData.filesWritten} files directly to Unity project at ${resData.outputPath}`);
+              setSyncedStatus(`Synced ${resData.fileName || resData.filesWritten || 'component'} directly to C# Desktop Engine / Unity UI Toolkit`);
             } else {
               throw new Error(resData.message || 'Server error');
             }

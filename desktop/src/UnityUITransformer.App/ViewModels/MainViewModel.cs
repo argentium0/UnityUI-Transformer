@@ -365,6 +365,7 @@ namespace UnityUITransformer.App.ViewModels
         private readonly UssGenerator _ussGenerator;
         private readonly ExportService _exportService;
         private readonly SecureStorageService _secureStorageService;
+        private readonly FigmaLocalBridgeServer _localBridgeServer;
 
         public MainViewModel(
             SupabaseAuthService? supabaseAuthService = null,
@@ -380,6 +381,10 @@ namespace UnityUITransformer.App.ViewModels
             _ussGenerator = ussGenerator ?? new UssGenerator();
             _exportService = exportService ?? new ExportService();
             _secureStorageService = secureStorageService ?? new SecureStorageService();
+
+            _localBridgeServer = new FigmaLocalBridgeServer("http://127.0.0.1:5142/sync/");
+            _localBridgeServer.PayloadReceivedAndProcessed += OnFigmaBridgePayloadReceived;
+            _localBridgeServer.Start(() => UnityAssetsPath);
 
             AuthVM = new AuthViewModel(this);
             ConfigVM = new ConfigViewModel(this);
@@ -417,7 +422,23 @@ namespace UnityUITransformer.App.ViewModels
 
             // Log initial startup event
             ShimLogSink.RaiseLog(ShimLogLevel.Info, "Figma → Unity UI Transformer (Pro Max v1.0.0) initialized.");
+            ShimLogSink.RaiseLog(ShimLogLevel.Info, "[LOCAL BRIDGE] Listener active on http://127.0.0.1:5142/sync/");
             ShimLogSink.RaiseLog(ShimLogLevel.Info, "Guided 3-Screen Architecture ready. Screen 1: Figma Authentication.");
+        }
+
+        private void OnFigmaBridgePayloadReceived(string fileName, string uxmlPath, string ussPath)
+        {
+            Application.Current?.Dispatcher?.Invoke(() =>
+            {
+                IsSyncing = false;
+                IsSyncComplete = true;
+                SyncProgress = 100.0;
+                SyncStatusText = $"Synced {fileName} via Local Bridge";
+
+                ShimLogSink.RaiseLog(ShimLogLevel.Info, $"[LOCAL BRIDGE] Received payload from Figma Plugin for component '{fileName}'.");
+                ShimLogSink.RaiseLog(ShimLogLevel.Info, $"[LOCAL BRIDGE] Output UXML: {uxmlPath}");
+                ShimLogSink.RaiseLog(ShimLogLevel.Info, $"[LOCAL BRIDGE] Output USS: {ussPath}");
+            });
         }
 
         private void UpdateCurrentView()
