@@ -5,338 +5,223 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:UnityUITransformer.App"
         xmlns:vm="clr-namespace:UnityUITransformer.App.ViewModels"
+        xmlns:views="clr-namespace:UnityUITransformer.App.Views"
         mc:Ignorable="d"
-        Title="Figma → Unity UI Transformer (Pro Max Edition)" 
-        Height="820" Width="1060"
-        MinWidth="940" MinHeight="680"
-        FontFamily="Segoe UI Variable, Segoe UI, Inter, System-UI, sans-serif"
+        Title="UnityUI Transformer" 
+        Width="980" Height="660"
+        MinWidth="850" MinHeight="550"
+        FontFamily="Segoe UI Variable, Inter, sans-serif"
         Background="{StaticResource BrushBgDeep}"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanResize">
 
     <Window.DataContext>
         <vm:MainViewModel />
     </Window.DataContext>
 
-    <Grid Margin="28">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/> <!-- Glass App Header -->
-            <RowDefinition Height="*"/>    <!-- Pro Max Wizard Steps & Debug Console -->
-        </Grid.RowDefinitions>
+    <Window.Resources>
+        <!-- DataTemplate Mappings for MVVM 3-Screen Navigation -->
+        <DataTemplate DataType="{x:Type vm:AuthViewModel}">
+            <views:AuthView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ConfigViewModel}">
+            <views:ConfigView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:SyncViewModel}">
+            <views:SyncView />
+        </DataTemplate>
+    </Window.Resources>
 
-        <!-- ================= TOP GLASS APP HEADER ================= -->
-        <Border Grid.Row="0" 
-                Background="{StaticResource BrushBgCard}" 
-                BorderBrush="{StaticResource BrushBorderSubtle}" 
-                BorderThickness="1" 
-                CornerRadius="12" 
-                Padding="24,18" 
-                Margin="0,0,0,24">
-            <Border.Effect>
-                <DropShadowEffect Color="#000000" BlurRadius="20" ShadowDepth="4" Opacity="0.4"/>
-            </Border.Effect>
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+    <!-- 2-COLUMN DRIBBBLE DASHBOARD GRID (COLUMN 0: 240PX NAVIGATION RAIL | COLUMN 1: WORKSPACE) -->
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="240"/> <!-- Expanded High-Contrast Navigation Rail -->
+            <ColumnDefinition Width="*"/>   <!-- Main Viewport Content -->
+        </Grid.ColumnDefinitions>
 
-                <!-- Brand Logo & Title -->
-                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Width="42" Height="42" CornerRadius="10" Background="{StaticResource BrushGradientPrimary}" Margin="0,0,16,0">
-                        <Border.Effect>
-                            <DropShadowEffect Color="#8B5CF6" BlurRadius="12" ShadowDepth="1" Opacity="0.4"/>
-                        </Border.Effect>
-                        <TextBlock Text="F2U" Foreground="#FFFFFF" FontWeight="Bold" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        <!-- ================= 1. COLUMN 0: EXPANDED NAVIGATION RAIL (240PX) ================= -->
+        <Border Grid.Column="0" 
+                Background="#121215" 
+                BorderBrush="#25262B" 
+                BorderThickness="0,0,1,0">
+            <Grid Margin="0,20">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/> <!-- Top Logo & App Title Block -->
+                    <RowDefinition Height="*"/>    <!-- Stacked High-Contrast Step Rail Buttons -->
+                    <RowDefinition Height="Auto"/> <!-- Bottom Connection Status Badge -->
+                </Grid.RowDefinitions>
+
+                <!-- Top Logo Icon & App Title Block -->
+                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="20,4,20,0" VerticalAlignment="Center">
+                    <Border Width="38" Height="38" CornerRadius="10" Background="#18181A" BorderBrush="#D4FF32" BorderThickness="1.5" Margin="0,0,12,0">
+                        <Viewbox Width="19" Height="19" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Canvas Width="24" Height="24">
+                                <Path Data="M12,2 L21,7 L21,17 L12,22 L3,17 L3,7 Z" Stroke="#D4FF32" StrokeThickness="1.8" Fill="#1F2414"/>
+                                <Path Data="M12,2 L12,12 L21,7 M12,12 L3,7 M12,12 L12,22" Stroke="#D4FF32" StrokeThickness="1.5"/>
+                                <Ellipse Canvas.Left="10" Canvas.Top="10" Width="4" Height="4" Fill="#D4FF32"/>
+                            </Canvas>
+                        </Viewbox>
                     </Border>
                     <StackPanel VerticalAlignment="Center">
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="Figma → Unity UI Transformer" Foreground="{StaticResource BrushTextPrimary}" FontWeight="Bold" FontSize="18"/>
-                            <Border Background="#18181B" BorderBrush="#27272A" BorderThickness="1" CornerRadius="5" Padding="8,3" Margin="12,0,0,0" VerticalAlignment="Center">
-                                <TextBlock Text="{Binding VersionTag}" Foreground="{StaticResource BrushAccentCyan}" FontSize="11" FontWeight="SemiBold" FontFamily="Cascadia Code, Consolas"/>
-                            </Border>
-                        </StackPanel>
-                        <TextBlock Text="Commercial-Grade Design Token &amp; VisualTree Pipeline Engine" Foreground="{StaticResource BrushTextSecondary}" FontSize="12" Margin="0,3,0,0"/>
+                        <TextBlock Text="UnityUI" Foreground="#FFFFFF" FontWeight="Bold" FontSize="15"/>
+                        <TextBlock Text="Transformer" Foreground="#9E9E9E" FontSize="11" FontWeight="SemiBold"/>
                     </StackPanel>
                 </StackPanel>
 
-                <!-- Connection Status Indicator Pill -->
-                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                    <!-- Disconnected State Pill -->
-                    <Border Visibility="{Binding IsConnected, Converter={StaticResource InverseBoolToVisConverter}}"
-                            Background="#18181B" BorderBrush="#27272A" BorderThickness="1" CornerRadius="20" Padding="14,7">
+                <!-- Stacked High-Contrast Navigation Rail Buttons -->
+                <StackPanel Grid.Row="1" Margin="16,32,16,0" VerticalAlignment="Top">
+                    <!-- Step 1 Button: Authentication -->
+                    <Button Command="{Binding NavigateToStepCommand}" CommandParameter="1" 
+                            ToolTip="1. Authentication"
+                            Margin="0,0,0,10" HorizontalAlignment="Stretch">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <Ellipse Width="8" Height="8" Fill="{StaticResource BrushWarningAmber}" Margin="0,0,8,0"/>
-                            <TextBlock Text="{Binding ConnectionStatusText}" Foreground="{StaticResource BrushTextSecondary}" FontSize="12" FontWeight="Medium"/>
+                            <TextBlock Text="01" FontWeight="Bold" FontSize="13" Margin="0,0,14,0"/>
+                            <TextBlock Text="Authentication" FontWeight="Bold" FontSize="13"/>
                         </StackPanel>
-                    </Border>
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource SidebarRailButtonStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding CurrentStepIndex, Converter={StaticResource EqualityToBoolConverter}, ConverterParameter=1}" Value="True">
+                                        <Setter Property="Background" Value="#D4FF32"/>
+                                        <Setter Property="Foreground" Value="#000000"/>
+                                        <Setter Property="BorderThickness" Value="0"/>
+                                        <Setter Property="Effect">
+                                            <Setter.Value>
+                                                <DropShadowEffect Color="#D4FF32" BlurRadius="10" ShadowDepth="1" Opacity="0.3"/>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
 
-                    <!-- Connected State Pill -->
-                    <Border Visibility="{Binding IsConnected, Converter={StaticResource BoolToVisConverter}}"
-                            Background="#022C22" BorderBrush="#059669" BorderThickness="1" CornerRadius="20" Padding="16,7">
-                        <Border.Effect>
-                            <DropShadowEffect Color="#10B981" BlurRadius="8" ShadowDepth="0" Opacity="0.3"/>
-                        </Border.Effect>
+                    <!-- Step 2 Button: Target Config -->
+                    <Button Command="{Binding NavigateToStepCommand}" CommandParameter="2" 
+                            ToolTip="2. Target Configuration"
+                            Margin="0,0,0,10" HorizontalAlignment="Stretch">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="✓" Foreground="#34D399" FontWeight="Bold" FontSize="12" Margin="0,0,8,0"/>
-                            <TextBlock Text="{Binding ConnectionStatusText}" Foreground="#ECFDF5" FontSize="12.5" FontWeight="SemiBold"/>
+                            <TextBlock Text="02" FontWeight="Bold" FontSize="13" Margin="0,0,14,0"/>
+                            <TextBlock Text="Target Config" FontWeight="Bold" FontSize="13"/>
                         </StackPanel>
-                    </Border>
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource SidebarRailButtonStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding CurrentStepIndex, Converter={StaticResource EqualityToBoolConverter}, ConverterParameter=2}" Value="True">
+                                        <Setter Property="Background" Value="#D4FF32"/>
+                                        <Setter Property="Foreground" Value="#000000"/>
+                                        <Setter Property="BorderThickness" Value="0"/>
+                                        <Setter Property="Effect">
+                                            <Setter.Value>
+                                                <DropShadowEffect Color="#D4FF32" BlurRadius="10" ShadowDepth="1" Opacity="0.3"/>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
+                    <!-- Step 3 Button: Sync Pipeline -->
+                    <Button Command="{Binding NavigateToStepCommand}" CommandParameter="3" 
+                            ToolTip="3. Sync Pipeline"
+                            HorizontalAlignment="Stretch">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="03" FontWeight="Bold" FontSize="13" Margin="0,0,14,0"/>
+                            <TextBlock Text="Sync Pipeline" FontWeight="Bold" FontSize="13"/>
+                        </StackPanel>
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource SidebarRailButtonStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding CurrentStepIndex, Converter={StaticResource EqualityToBoolConverter}, ConverterParameter=3}" Value="True">
+                                        <Setter Property="Background" Value="#D4FF32"/>
+                                        <Setter Property="Foreground" Value="#000000"/>
+                                        <Setter Property="BorderThickness" Value="0"/>
+                                        <Setter Property="Effect">
+                                            <Setter.Value>
+                                                <DropShadowEffect Color="#D4FF32" BlurRadius="10" ShadowDepth="1" Opacity="0.3"/>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
                 </StackPanel>
+
+                <!-- Bottom Sidebar Connection Status Badge -->
+                <Border Grid.Row="2" Margin="16,0,16,0" Background="#18181C" BorderBrush="#25262B" BorderThickness="1" CornerRadius="12" Padding="14,10">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Ellipse x:Name="SidebarStatusDot" Width="8" Height="8" Fill="#10B981" Margin="0,0,10,0">
+                            <Ellipse.Triggers>
+                                <EventTrigger RoutedEvent="Ellipse.Loaded">
+                                    <BeginStoryboard>
+                                        <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.35" To="1.0" Duration="0:0:1.2">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <SineEase EasingMode="EaseInOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </EventTrigger>
+                            </Ellipse.Triggers>
+                        </Ellipse>
+                        <TextBlock Text="{Binding ConnectionStatusText}" Foreground="#9E9E9E" FontSize="12" FontWeight="Medium"/>
+                    </StackPanel>
+                </Border>
             </Grid>
         </Border>
 
-        <!-- ================= MAIN WIZARD BODY ================= -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-            <StackPanel Margin="0,0,6,0">
+        <!-- ================= 2. COLUMN 1: MAIN VIEWPORT CONTENT ================= -->
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/> <!-- Top Compact Workspace Header Bar -->
+                <RowDefinition Height="*"/>    <!-- Active Screen Viewport -->
+            </Grid.RowDefinitions>
 
-                <!-- STEP 1 CARD (Authentication) -->
-                <Border Background="{StaticResource BrushBgCard}" 
-                        BorderBrush="{Binding IsStep1Completed, Converter={StaticResource StepBorderBrushConverter}}" 
-                        BorderThickness="1" CornerRadius="12" Padding="22" Margin="0,0,0,20">
-                    <Border.Effect>
-                        <DropShadowEffect Color="#000000" BlurRadius="16" ShadowDepth="2" Opacity="0.25"/>
-                    </Border.Effect>
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
+            <!-- Top Compact Workspace Header -->
+            <Border Grid.Row="0" Background="#18181A" Padding="28,16,28,12">
+                <Grid>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="UnityUI Transformer" Foreground="#FFFFFF" FontWeight="Bold" FontSize="17" VerticalAlignment="Center"/>
+                    </StackPanel>
 
-                        <!-- Step 1 Header -->
-                        <Grid Grid.Row="0" Margin="0,0,0,14">
+                    <!-- Connection Status Badge & User Avatar -->
+                    <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                        <!-- Disconnected Status Pill -->
+                        <Border Visibility="{Binding IsConnected, Converter={StaticResource InverseBoolToVisConverter}}"
+                                Background="#1F2024" CornerRadius="14" Padding="12,5">
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <Border Width="28" Height="28" CornerRadius="14" Background="{StaticResource BrushGradientPrimary}" Margin="0,0,12,0">
-                                    <TextBlock Text="1" Foreground="#FFFFFF" FontWeight="Bold" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                                <TextBlock Text="Step 1: Authenticate Figma Service" Foreground="{StaticResource BrushTextPrimary}" FontWeight="SemiBold" FontSize="15"/>
+                                <Ellipse Width="6" Height="6" Fill="#F59E0B" Margin="0,0,6,0"/>
+                                <TextBlock Text="{Binding ConnectionStatusText}" Foreground="#9E9E9E" FontSize="11.5" FontWeight="Medium"/>
                             </StackPanel>
-
-                            <Border Visibility="{Binding IsConnected, Converter={StaticResource BoolToVisConverter}}" 
-                                    Background="#064E3B" BorderBrush="#10B981" BorderThickness="1" CornerRadius="12" Padding="10,4" HorizontalAlignment="Right" VerticalAlignment="Center">
-                                <TextBlock Text="✓ Authenticated" Foreground="#34D399" FontWeight="SemiBold" FontSize="11.5"/>
-                            </Border>
-                        </Grid>
-
-                        <!-- Step 1 Content -->
-                        <Grid Grid.Row="1">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-
-                            <TextBlock Grid.Column="0" Text="Authenticate via OAuth 2.0 or Personal Access Token to extract design tokens, auto-layout variables, and node trees." 
-                                       Foreground="{StaticResource BrushTextSecondary}" FontSize="13" VerticalAlignment="Center" TextWrapping="Wrap" LineHeight="20"/>
-
-                            <!-- Connect Action -->
-                            <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="20,0,0,0" VerticalAlignment="Center">
-                                <Button Command="{Binding ConnectCommand}" 
-                                        Style="{StaticResource ProMaxPrimaryButtonStyle}" 
-                                        Visibility="{Binding IsConnected, Converter={StaticResource InverseBoolToVisConverter}}"
-                                        Padding="22,11">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="Connect with Figma" FontWeight="SemiBold"/>
-                                    </StackPanel>
-                                </Button>
-
-                                <Border Visibility="{Binding IsConnected, Converter={StaticResource BoolToVisConverter}}"
-                                        Background="#18181B" BorderBrush="#27272A" BorderThickness="1" CornerRadius="8" Padding="16,10">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="Token Active" Foreground="#A1A1AA" FontWeight="Medium" FontSize="12.5" Margin="0,0,8,0"/>
-                                        <TextBlock Text="🔑" FontSize="12"/>
-                                    </StackPanel>
-                                </Border>
-                            </StackPanel>
-                        </Grid>
-                    </Grid>
-                </Border>
-
-                <!-- STEP 2 CARD (Configuration & Target Paths) -->
-                <Border Background="{StaticResource BrushBgCard}" 
-                        BorderBrush="{Binding IsStep2Active, Converter={StaticResource StepBorderBrushConverter}}" 
-                        Opacity="{Binding IsStep2Active, Converter={StaticResource StepOpacityConverter}}"
-                        BorderThickness="1" CornerRadius="12" Padding="22" Margin="0,0,0,20">
-                    <Border.Effect>
-                        <DropShadowEffect Color="#000000" BlurRadius="16" ShadowDepth="2" Opacity="0.25"/>
-                    </Border.Effect>
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-
-                        <!-- Step 2 Header -->
-                        <Grid Grid.Row="0" Margin="0,0,0,16">
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <Border Width="28" Height="28" CornerRadius="14" Background="{StaticResource BrushGradientPrimary}" Margin="0,0,12,0">
-                                    <TextBlock Text="2" Foreground="#FFFFFF" FontWeight="Bold" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                                <TextBlock Text="Step 2: Source Document &amp; Target Paths" Foreground="{StaticResource BrushTextPrimary}" FontWeight="SemiBold" FontSize="15"/>
-                            </StackPanel>
-
-                            <Border Visibility="{Binding IsStep2Completed, Converter={StaticResource BoolToVisConverter}}" 
-                                    Background="#064E3B" BorderBrush="#10B981" BorderThickness="1" CornerRadius="12" Padding="10,4" HorizontalAlignment="Right" VerticalAlignment="Center">
-                                <TextBlock Text="✓ Configuration Valid" Foreground="#34D399" FontWeight="SemiBold" FontSize="11.5"/>
-                            </Border>
-                        </Grid>
-
-                        <!-- Row 1: Figma File / Node URL -->
-                        <StackPanel Grid.Row="1" Margin="0,0,0,16">
-                            <Grid Margin="0,0,0,8">
-                                <TextBlock Text="Figma File / Node URL" Foreground="{StaticResource BrushTextPrimary}" FontWeight="Medium" FontSize="13"/>
-                                <TextBlock Text="✓ URL Verified" Foreground="{StaticResource BrushSuccessEmerald}" FontSize="11.5" FontWeight="Medium" HorizontalAlignment="Right"
-                                           Visibility="{Binding IsFigmaUrlValid, Converter={StaticResource BoolToVisConverter}}"/>
-                            </Grid>
-                            <Grid>
-                                <TextBox Text="{Binding FigmaUrl, UpdateSourceTrigger=PropertyChanged}" 
-                                         IsEnabled="{Binding IsStep2Active}"
-                                         Style="{StaticResource ProMaxTextBoxStyle}"/>
-                                <TextBlock Text="https://www.figma.com/file/XYZ123456/App-UI-Kit?node-id=1:2" 
-                                           Foreground="{StaticResource BrushTextMuted}" 
-                                           FontSize="12.5" FontFamily="Cascadia Code, Consolas" Margin="14,11" IsHitTestVisible="False"
-                                           Visibility="{Binding FigmaUrl, Converter={StaticResource NullOrEmptyToVisConverter}}"/>
-                            </Grid>
-                        </StackPanel>
-
-                        <!-- Row 2: Unity Target Directory -->
-                        <StackPanel Grid.Row="2">
-                            <Grid Margin="0,0,0,8">
-                                <TextBlock Text="Unity Target Assets Directory" Foreground="{StaticResource BrushTextPrimary}" FontWeight="Medium" FontSize="13"/>
-                                <TextBlock Text="✓ Target Selected" Foreground="{StaticResource BrushSuccessEmerald}" FontSize="11.5" FontWeight="Medium" HorizontalAlignment="Right"
-                                           Visibility="{Binding IsUnityPathValid, Converter={StaticResource BoolToVisConverter}}"/>
-                            </Grid>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-
-                                <Grid Grid.Column="0">
-                                    <TextBox Text="{Binding UnityAssetsPath, UpdateSourceTrigger=PropertyChanged}" 
-                                             IsEnabled="{Binding IsStep2Active}"
-                                             Style="{StaticResource ProMaxTextBoxStyle}"/>
-                                    <TextBlock Text="C:\Projects\MyUnityGame\Assets\UI" 
-                                               Foreground="{StaticResource BrushTextMuted}" 
-                                               FontSize="12.5" FontFamily="Cascadia Code, Consolas" Margin="14,11" IsHitTestVisible="False"
-                                               Visibility="{Binding UnityAssetsPath, Converter={StaticResource NullOrEmptyToVisConverter}}"/>
-                                </Grid>
-
-                                <Button Grid.Column="1" 
-                                        Command="{Binding BrowseFolderCommand}" 
-                                        Content="Browse..." 
-                                        Style="{StaticResource ProMaxSecondaryButtonStyle}" 
-                                        Margin="12,0,0,0" Padding="18,0"/>
-                            </Grid>
-                        </StackPanel>
-                    </Grid>
-                </Border>
-
-                <!-- STEP 3 CARD (Transformation & IDE Debug Terminal) -->
-                <Border Background="{StaticResource BrushBgCard}" 
-                        BorderBrush="{Binding IsStep3Active, Converter={StaticResource StepBorderBrushConverter}}" 
-                        Opacity="{Binding IsStep3Active, Converter={StaticResource StepOpacityConverter}}"
-                        BorderThickness="1" CornerRadius="12" Padding="22" Margin="0,0,0,20">
-                    <Border.Effect>
-                        <DropShadowEffect Color="#000000" BlurRadius="16" ShadowDepth="2" Opacity="0.25"/>
-                    </Border.Effect>
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-
-                        <!-- Step 3 Header -->
-                        <Grid Grid.Row="0" Margin="0,0,0,16">
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <Border Width="28" Height="28" CornerRadius="14" Background="{StaticResource BrushGradientPrimary}" Margin="0,0,12,0">
-                                    <TextBlock Text="3" Foreground="#FFFFFF" FontWeight="Bold" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                                <TextBlock Text="Step 3: Execute Translation Engine" Foreground="{StaticResource BrushTextPrimary}" FontWeight="SemiBold" FontSize="15"/>
-                            </StackPanel>
-                        </Grid>
-
-                        <!-- Primary Action & Progress -->
-                        <Grid Grid.Row="1" Margin="0,0,0,20">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-
-                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                <TextBlock Text="Compile design hierarchy into native UI Toolkit UXML visual trees, USS stylesheets, and design token ScriptableObjects." 
-                                           Foreground="{StaticResource BrushTextSecondary}" FontSize="13" TextWrapping="Wrap" LineHeight="20"/>
-
-                                <!-- Progress Bar during Sync -->
-                                <StackPanel Visibility="{Binding IsSyncing, Converter={StaticResource BoolToVisConverter}}" Margin="0,14,0,0">
-                                    <ProgressBar Height="6" Value="{Binding SyncProgress}" Maximum="100" Background="#0E0E12" Foreground="{StaticResource BrushGradientPrimary}" BorderThickness="0"/>
-                                    <TextBlock Text="{Binding SyncStatusText}" Foreground="{StaticResource BrushAccentCyan}" FontSize="12" FontFamily="Cascadia Code, Consolas" Margin="0,6,0,0"/>
-                                </StackPanel>
-                            </StackPanel>
-
-                            <Button Grid.Column="1" 
-                                    Command="{Binding SyncCommand}" 
-                                    Style="{StaticResource ProMaxPrimaryButtonStyle}" 
-                                    Padding="28,14" Margin="20,0,0,0">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="⚡ Sync UI to Unity" FontWeight="Bold" FontSize="14.5"/>
-                                </StackPanel>
-                            </Button>
-                        </Grid>
-
-                        <!-- Terminal Header Bar -->
-                        <Border Grid.Row="2" Background="{StaticResource BrushBgHeader}" BorderBrush="{StaticResource BrushBorderSubtle}" BorderThickness="1,1,1,0" CornerRadius="10,10,0,0" Padding="16,12">
-                            <Grid>
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <Ellipse Width="8" Height="8" Fill="{StaticResource BrushSuccessEmerald}" Margin="0,0,8,0"/>
-                                    <TextBlock Text="IDE Debug Console" Foreground="{StaticResource BrushTextPrimary}" FontWeight="SemiBold" FontSize="12.5"/>
-                                    <Border Background="#09090B" BorderBrush="#27272A" BorderThickness="1" CornerRadius="4" Padding="7,2" Margin="12,0,0,0">
-                                        <TextBlock Text="ShimLogSink" Foreground="{StaticResource BrushAccentCyan}" FontSize="10.5" FontFamily="Cascadia Code, Consolas"/>
-                                    </Border>
-                                </StackPanel>
-
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                                    <CheckBox IsChecked="{Binding AutoScrollEnabled}" Style="{StaticResource ProMaxCheckBoxStyle}" Content="Auto-Scroll" Margin="0,0,16,0"/>
-                                    <Button Command="{Binding ClearLogsCommand}" Content="Clear Console" Style="{StaticResource ProMaxSecondaryButtonStyle}" Padding="12,5" FontSize="11" Margin="0,0,10,0"/>
-                                    <Button Command="{Binding ToggleTerminalCommand}" Content="{Binding TerminalToggleText}" Style="{StaticResource ProMaxSecondaryButtonStyle}" Padding="12,5" FontSize="11"/>
-                                </StackPanel>
-                            </Grid>
                         </Border>
 
-                        <!-- Pro Max Terminal Output Console -->
-                        <Border Grid.Row="3" 
-                                Visibility="{Binding IsTerminalExpanded, Converter={StaticResource BoolToVisConverter}}"
-                                Background="{StaticResource BrushTerminal}" 
-                                BorderBrush="{StaticResource BrushBorderSubtle}" 
-                                BorderThickness="1,0,1,1" 
-                                CornerRadius="0,0,10,10" 
-                                Height="200" 
-                                Padding="14">
-                            <ScrollViewer x:Name="TerminalScrollViewer" VerticalScrollBarVisibility="Auto">
-                                <ItemsControl ItemsSource="{Binding LogEntries}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Grid Margin="0,3">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                </Grid.ColumnDefinitions>
-
-                                                <TextBlock Grid.Column="0" Text="{Binding FormattedTimestamp, StringFormat='[{0}]'}" Foreground="{StaticResource BrushTextMuted}" FontFamily="Cascadia Code, Consolas" FontSize="11.5" Margin="0,0,10,0"/>
-                                                <TextBlock Grid.Column="1" Text="{Binding Level, StringFormat='[{0}]'}" Foreground="{Binding Level, Converter={StaticResource LogLevelToBrushConverter}}" FontWeight="Bold" FontFamily="Cascadia Code, Consolas" FontSize="11.5" Margin="0,0,10,0"/>
-                                                <TextBlock Grid.Column="2" Text="{Binding Message}" Foreground="{Binding Level, Converter={StaticResource LogLevelToBrushConverter}}" FontFamily="Cascadia Code, Consolas" FontSize="11.5" TextWrapping="Wrap"/>
-                                            </Grid>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </ScrollViewer>
+                        <!-- Connected Status Pill -->
+                        <Border Visibility="{Binding IsConnected, Converter={StaticResource BoolToVisConverter}}"
+                                Background="#192A20" BorderBrush="#10B981" BorderThickness="1" CornerRadius="14" Padding="12,5">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="✓" Foreground="#10B981" FontWeight="Bold" FontSize="11" Margin="0,0,6,0"/>
+                                <TextBlock Text="{Binding ConnectionStatusText}" Foreground="#FFFFFF" FontSize="11.5" FontWeight="SemiBold"/>
+                            </StackPanel>
                         </Border>
-                    </Grid>
-                </Border>
-            </StackPanel>
-        </ScrollViewer>
+
+                        <!-- Circular User Avatar with Neon Accent Mask -->
+                        <Border Visibility="{Binding IsConnected, Converter={StaticResource BoolToVisConverter}}" 
+                                Margin="10,0,0,0" Width="30" Height="30" CornerRadius="15" BorderBrush="#D4FF32" BorderThickness="1.5" VerticalAlignment="Center">
+                            <Ellipse Width="27" Height="27">
+                                <Ellipse.Fill>
+                                    <ImageBrush ImageSource="{Binding AvatarUrl}" Stretch="UniformToFill"/>
+                                </Ellipse.Fill>
+                            </Ellipse>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Main Content Area Hosting Active Screen -->
+            <ContentControl Grid.Row="1" Content="{Binding CurrentView}" Focusable="False"/>
+        </Grid>
     </Grid>
 </Window>

@@ -14,106 +14,98 @@
             <converters:StepActiveToOpacityConverter x:Key="StepOpacityConverter"/>
             <converters:StepActiveToBorderBrushConverter x:Key="StepBorderBrushConverter"/>
             <converters:LogLevelToBrushConverter x:Key="LogLevelToBrushConverter"/>
+            <converters:EqualityToBooleanConverter x:Key="EqualityToBoolConverter"/>
 
-            <!-- Pro Max Design System Palette -->
-            <Color x:Key="ColorBgDeep">#09090B</Color>          <!-- Zinc-950 Base Canvas -->
-            <Color x:Key="ColorBgCard">#121216</Color>          <!-- Elevated Card Panel -->
-            <Color x:Key="ColorBgHeader">#141419</Color>        <!-- Header / Subpanel -->
-            <Color x:Key="ColorBgFloating">#18181B</Color>      <!-- Floating Controls -->
-            <Color x:Key="ColorBgInput">#0E0E12</Color>         <!-- Deep Inset Input -->
-            <Color x:Key="ColorTerminal">#050505</Color>        <!-- Ultra-dark Debug Terminal -->
+            <!-- True Dribbble Dark Dashboard Palette -->
+            <Color x:Key="ColorBgDeep">#18181A</Color>          <!-- Deep Matte Black Canvas -->
+            <Color x:Key="ColorBgCard">#25262B</Color>          <!-- Elevated Charcoal Card Panel -->
+            <Color x:Key="ColorBgHeader">#18181A</Color>        <!-- Deep Black Header -->
+            <Color x:Key="ColorBgSidebar">#121214</Color>       <!-- Dark Vertical Left Sidebar -->
+            <Color x:Key="ColorBgInput">#1F2024</Color>         <!-- Inset Deep Charcoal Input -->
+            <Color x:Key="ColorTerminal">#141416</Color>        <!-- Pitch Charcoal Terminal -->
 
-            <Color x:Key="ColorBorderSubtle">#27272A</Color>    <!-- Zinc-800 Crisp Glass Border -->
-            <Color x:Key="ColorBorderHover">#3F3F46</Color>     <!-- Zinc-700 Hover Border -->
-            <Color x:Key="ColorBorderFocus">#8B5CF6</Color>     <!-- Violet Focus Ring -->
+            <Color x:Key="ColorBorderSubtle">#2D2E34</Color>
+            <Color x:Key="ColorBorderFocus">#D4FF32</Color>     <!-- Neon Lime Green Focus Ring -->
 
             <!-- Accents -->
-            <Color x:Key="ColorAccentIndigo">#6366F1</Color>
-            <Color x:Key="ColorAccentViolet">#8B5CF6</Color>
-            <Color x:Key="ColorAccentCyan">#38BDF8</Color>
-            <Color x:Key="ColorSuccessEmerald">#34D399</Color>
-            <Color x:Key="ColorWarningAmber">#FBBF24</Color>
-            <Color x:Key="ColorErrorCoral">#F87171</Color>
+            <Color x:Key="ColorAccentNeon">#D4FF32</Color>      <!-- Neon Lime Green -->
+            <Color x:Key="ColorAccentBlue">#4A62FF</Color>      <!-- Royal Blue Primary CTA -->
+            <Color x:Key="ColorAccentBlueHover">#3B52E6</Color>
+            <Color x:Key="ColorSuccessEmerald">#10B981</Color>
+            <Color x:Key="ColorWarningAmber">#F59E0B</Color>
+            <Color x:Key="ColorErrorRed">#EF4444</Color>
 
-            <Color x:Key="ColorTextPrimary">#F4F4F5</Color>
-            <Color x:Key="ColorTextSecondary">#A1A1AA</Color>
-            <Color x:Key="ColorTextMuted">#71717A</Color>
+            <Color x:Key="ColorTextPrimary">#FFFFFF</Color>     <!-- Pure White Headers -->
+            <Color x:Key="ColorTextSecondary">#9E9E9E</Color>   <!-- Muted Slate Subtext -->
+            <Color x:Key="ColorTextMuted">#6E6E6E</Color>
 
             <!-- Brushes -->
             <SolidColorBrush x:Key="BrushBgDeep" Color="{StaticResource ColorBgDeep}"/>
             <SolidColorBrush x:Key="BrushBgCard" Color="{StaticResource ColorBgCard}"/>
             <SolidColorBrush x:Key="BrushBgHeader" Color="{StaticResource ColorBgHeader}"/>
-            <SolidColorBrush x:Key="BrushBgFloating" Color="{StaticResource ColorBgFloating}"/>
+            <SolidColorBrush x:Key="BrushBgSidebar" Color="{StaticResource ColorBgSidebar}"/>
             <SolidColorBrush x:Key="BrushBgInput" Color="{StaticResource ColorBgInput}"/>
             <SolidColorBrush x:Key="BrushTerminal" Color="{StaticResource ColorTerminal}"/>
 
             <SolidColorBrush x:Key="BrushBorderSubtle" Color="{StaticResource ColorBorderSubtle}"/>
-            <SolidColorBrush x:Key="BrushBorderHover" Color="{StaticResource ColorBorderHover}"/>
             <SolidColorBrush x:Key="BrushBorderFocus" Color="{StaticResource ColorBorderFocus}"/>
 
-            <!-- Primary Accent Gradient Brush (Indigo -> Violet) -->
-            <LinearGradientBrush x:Key="BrushGradientPrimary" StartPoint="0,0" EndPoint="1,0">
-                <GradientStop Color="#6366F1" Offset="0.0"/>
-                <GradientStop Color="#8B5CF6" Offset="1.0"/>
-            </LinearGradientBrush>
-
-            <LinearGradientBrush x:Key="BrushGradientPrimaryHover" StartPoint="0,0" EndPoint="1,0">
-                <GradientStop Color="#4F46E5" Offset="0.0"/>
-                <GradientStop Color="#7C3AED" Offset="1.0"/>
-            </LinearGradientBrush>
-
-            <SolidColorBrush x:Key="BrushAccentCyan" Color="{StaticResource ColorAccentCyan}"/>
+            <SolidColorBrush x:Key="BrushAccentNeon" Color="{StaticResource ColorAccentNeon}"/>
+            <SolidColorBrush x:Key="BrushAccentBlue" Color="{StaticResource ColorAccentBlue}"/>
+            <SolidColorBrush x:Key="BrushAccentCyan" Color="{StaticResource ColorAccentNeon}"/>
             <SolidColorBrush x:Key="BrushSuccessEmerald" Color="{StaticResource ColorSuccessEmerald}"/>
             <SolidColorBrush x:Key="BrushWarningAmber" Color="{StaticResource ColorWarningAmber}"/>
-            <SolidColorBrush x:Key="BrushErrorCoral" Color="{StaticResource ColorErrorCoral}"/>
+            <SolidColorBrush x:Key="BrushErrorCoral" Color="{StaticResource ColorErrorRed}"/>
 
             <SolidColorBrush x:Key="BrushTextPrimary" Color="{StaticResource ColorTextPrimary}"/>
             <SolidColorBrush x:Key="BrushTextSecondary" Color="{StaticResource ColorTextSecondary}"/>
             <SolidColorBrush x:Key="BrushTextMuted" Color="{StaticResource ColorTextMuted}"/>
 
-            <!-- Pro Max Primary Button Style -->
+            <!-- Royal Blue Pill-Shaped Primary Button Style -->
             <Style x:Key="ProMaxPrimaryButtonStyle" TargetType="Button">
-                <Setter Property="Background" Value="{StaticResource BrushGradientPrimary}"/>
+                <Setter Property="Background" Value="{StaticResource BrushAccentBlue}"/>
                 <Setter Property="Foreground" Value="#FFFFFF"/>
-                <Setter Property="FontWeight" Value="SemiBold"/>
-                <Setter Property="FontSize" Value="13"/>
-                <Setter Property="Padding" Value="20,11"/>
+                <Setter Property="FontFamily" Value="Segoe UI Variable, Inter, sans-serif"/>
+                <Setter Property="FontWeight" Value="Bold"/>
+                <Setter Property="FontSize" Value="13.5"/>
+                <Setter Property="Padding" Value="26,12"/>
                 <Setter Property="BorderThickness" Value="0"/>
                 <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+                <Setter Property="RenderTransform">
+                    <Setter.Value>
+                        <ScaleTransform ScaleX="1.0" ScaleY="1.0"/>
+                    </Setter.Value>
+                </Setter>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="Button">
                             <Border x:Name="border" 
-                                    Background="{TemplateBinding Background}" 
-                                    CornerRadius="8" 
-                                    Padding="{TemplateBinding Padding}"
-                                    SnapsToDevicePixels="True">
-                                <Border.Effect>
-                                    <DropShadowEffect Color="#8B5CF6" BlurRadius="10" ShadowDepth="1" Opacity="0.3"/>
-                                </Border.Effect>
+                                     Background="{TemplateBinding Background}" 
+                                     CornerRadius="24" 
+                                     Padding="{TemplateBinding Padding}"
+                                     SnapsToDevicePixels="True">
                                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="border" Property="Background" Value="{StaticResource BrushGradientPrimaryHover}"/>
-                                    <Setter TargetName="border" Property="Effect">
+                                    <Setter TargetName="border" Property="Background" Value="#3B52E6"/>
+                                    <Setter Property="RenderTransform">
                                         <Setter.Value>
-                                            <DropShadowEffect Color="#8B5CF6" BlurRadius="16" ShadowDepth="1" Opacity="0.55"/>
+                                            <ScaleTransform ScaleX="1.03" ScaleY="1.03"/>
                                         </Setter.Value>
                                     </Setter>
                                 </Trigger>
                                 <Trigger Property="IsPressed" Value="True">
-                                    <Setter TargetName="border" Property="Background" Value="#4338CA"/>
-                                    <Setter TargetName="border" Property="Effect">
+                                    <Setter Property="RenderTransform">
                                         <Setter.Value>
-                                            <DropShadowEffect Color="#8B5CF6" BlurRadius="4" ShadowDepth="1" Opacity="0.15"/>
+                                            <ScaleTransform ScaleX="0.98" ScaleY="0.98"/>
                                         </Setter.Value>
                                     </Setter>
                                 </Trigger>
                                 <Trigger Property="IsEnabled" Value="False">
-                                    <Setter TargetName="border" Property="Background" Value="#18181B"/>
-                                    <Setter Property="Foreground" Value="#52525B"/>
-                                    <Setter TargetName="border" Property="Effect" Value="{x:Null}"/>
+                                    <Setter TargetName="border" Property="Background" Value="#2A2B32"/>
+                                    <Setter Property="Foreground" Value="#6E6E6E"/>
                                     <Setter Property="Cursor" Value="No"/>
                                 </Trigger>
                             </ControlTemplate.Triggers>
@@ -122,34 +114,31 @@
                 </Setter>
             </Style>
 
-            <!-- Pro Max Secondary Button Style -->
+            <!-- Deep Charcoal Pill Secondary Button Style -->
             <Style x:Key="ProMaxSecondaryButtonStyle" TargetType="Button">
-                <Setter Property="Background" Value="{StaticResource BrushBgFloating}"/>
-                <Setter Property="Foreground" Value="{StaticResource BrushTextPrimary}"/>
-                <Setter Property="BorderBrush" Value="{StaticResource BrushBorderSubtle}"/>
-                <Setter Property="BorderThickness" Value="1"/>
-                <Setter Property="FontWeight" Value="Medium"/>
+                <Setter Property="Background" Value="#1F2024"/>
+                <Setter Property="Foreground" Value="#FFFFFF"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="FontFamily" Value="Segoe UI Variable, Inter, sans-serif"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
                 <Setter Property="FontSize" Value="12"/>
-                <Setter Property="Padding" Value="14,8"/>
+                <Setter Property="Padding" Value="18,9"/>
                 <Setter Property="Cursor" Value="Hand"/>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="Button">
                             <Border x:Name="border" 
-                                    Background="{TemplateBinding Background}" 
-                                    BorderBrush="{TemplateBinding BorderBrush}" 
-                                    BorderThickness="{TemplateBinding BorderThickness}" 
-                                    CornerRadius="6" 
-                                    Padding="{TemplateBinding Padding}">
+                                     Background="{TemplateBinding Background}" 
+                                     CornerRadius="20" 
+                                     Padding="{TemplateBinding Padding}">
                                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="border" Property="Background" Value="#27272A"/>
-                                    <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource BrushBorderHover}"/>
+                                    <Setter TargetName="border" Property="Background" Value="#2B2C32"/>
                                 </Trigger>
                                 <Trigger Property="IsPressed" Value="True">
-                                    <Setter TargetName="border" Property="Background" Value="#09090B"/>
+                                    <Setter TargetName="border" Property="Background" Value="#18181A"/>
                                 </Trigger>
                                 <Trigger Property="IsEnabled" Value="False">
                                     <Setter TargetName="border" Property="Opacity" Value="0.4"/>
@@ -161,38 +150,33 @@
                 </Setter>
             </Style>
 
-            <!-- Pro Max Monospace TextBox Style -->
+            <!-- Deep Charcoal TextBox Style with 1px Neon Lime Focus Border -->
             <Style x:Key="ProMaxTextBoxStyle" TargetType="TextBox">
-                <Setter Property="Background" Value="{StaticResource BrushBgInput}"/>
-                <Setter Property="Foreground" Value="{StaticResource BrushTextPrimary}"/>
-                <Setter Property="BorderBrush" Value="{StaticResource BrushBorderSubtle}"/>
-                <Setter Property="BorderThickness" Value="1"/>
-                <Setter Property="Padding" Value="12,10"/>
+                <Setter Property="Background" Value="#1F2024"/>
+                <Setter Property="Foreground" Value="#FFFFFF"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Padding" Value="14,11"/>
                 <Setter Property="FontSize" Value="12.5"/>
-                <Setter Property="FontFamily" Value="Cascadia Code, Consolas, Courier New, monospace"/>
-                <Setter Property="CaretBrush" Value="{StaticResource BrushAccentCyan}"/>
-                <Setter Property="SelectionBrush" Value="#6366F1"/>
+                <Setter Property="FontFamily" Value="Cascadia Code, Consolas, monospace"/>
+                <Setter Property="CaretBrush" Value="#D4FF32"/>
+                <Setter Property="SelectionBrush" Value="#4A62FF"/>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="TextBox">
                             <Border x:Name="border" 
-                                    Background="{TemplateBinding Background}" 
-                                    BorderBrush="{TemplateBinding BorderBrush}" 
-                                    BorderThickness="{TemplateBinding BorderThickness}" 
-                                    CornerRadius="6">
+                                     Background="{TemplateBinding Background}" 
+                                     BorderBrush="Transparent" 
+                                     BorderThickness="1" 
+                                     CornerRadius="12">
                                 <ScrollViewer x:Name="PART_ContentHost" Focusable="false" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
                             </Border>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsFocused" Value="True">
-                                    <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource BrushBorderFocus}"/>
-                                    <Setter TargetName="border" Property="Effect">
-                                        <Setter.Value>
-                                            <DropShadowEffect Color="#8B5CF6" BlurRadius="8" ShadowDepth="0" Opacity="0.35"/>
-                                        </Setter.Value>
-                                    </Setter>
+                                    <Setter TargetName="border" Property="BorderBrush" Value="#D4FF32"/>
+                                    <Setter TargetName="border" Property="BorderThickness" Value="1"/>
                                 </Trigger>
                                 <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource BrushBorderHover}"/>
+                                    <Setter TargetName="border" Property="Background" Value="#25262C"/>
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
@@ -200,30 +184,93 @@
                 </Setter>
             </Style>
 
-            <!-- Pro Max CheckBox Style -->
+            <!-- High-Contrast Sidebar Navigation Rail Button Style -->
+            <Style x:Key="SidebarRailButtonStyle" TargetType="Button">
+                <Setter Property="Background" Value="#1F2024"/>
+                <Setter Property="Foreground" Value="#FFFFFF"/>
+                <Setter Property="BorderBrush" Value="#333333"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="FontFamily" Value="Segoe UI Variable, Inter, sans-serif"/>
+                <Setter Property="FontWeight" Value="Bold"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                <Setter Property="Padding" Value="16,12"/>
+                <Setter Property="Height" Value="46"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="border"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="12"
+                                    SnapsToDevicePixels="True">
+                                <ContentPresenter TextElement.Foreground="{TemplateBinding Foreground}" 
+                                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
+                                                  VerticalAlignment="Center" 
+                                                  Margin="{TemplateBinding Padding}"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="border" Property="Background" Value="#2D2F36"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="border" Property="Opacity" Value="0.35"/>
+                                    <Setter Property="Cursor" Value="No"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Dark Theme CheckBox Style -->
             <Style x:Key="ProMaxCheckBoxStyle" TargetType="CheckBox">
-                <Setter Property="Foreground" Value="{StaticResource BrushTextSecondary}"/>
+                <Setter Property="Foreground" Value="#9E9E9E"/>
                 <Setter Property="FontSize" Value="11.5"/>
                 <Setter Property="Cursor" Value="Hand"/>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="CheckBox">
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <Border x:Name="border" Width="14" Height="14" CornerRadius="3" Background="#18181B" BorderBrush="#3F3F46" BorderThickness="1" Margin="0,0,6,0">
-                                    <TextBlock x:Name="checkMark" Text="✓" Foreground="#34D399" FontWeight="Bold" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
+                                <Border x:Name="border" Width="14" Height="14" CornerRadius="3" Background="#1F2024" BorderBrush="#3F3F46" BorderThickness="1" Margin="0,0,6,0">
+                                    <TextBlock x:Name="checkMark" Text="✓" Foreground="#D4FF32" FontWeight="Bold" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
                                 </Border>
                                 <ContentPresenter VerticalAlignment="Center"/>
                             </StackPanel>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsChecked" Value="True">
-                                    <Setter TargetName="border" Property="Background" Value="#064E3B"/>
-                                    <Setter TargetName="border" Property="BorderBrush" Value="#10B981"/>
+                                    <Setter TargetName="border" Property="Background" Value="#18181A"/>
+                                    <Setter TargetName="border" Property="BorderBrush" Value="#D4FF32"/>
                                     <Setter TargetName="checkMark" Property="Visibility" Value="Visible"/>
                                 </Trigger>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="border" Property="BorderBrush" Value="#6366F1"/>
-                                </Trigger>
                             </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Dark ToolTip Style -->
+            <Style TargetType="ToolTip">
+                <Setter Property="Background" Value="#25262B"/>
+                <Setter Property="Foreground" Value="#FFFFFF"/>
+                <Setter Property="BorderBrush" Value="#3F3F46"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Padding" Value="10,6"/>
+                <Setter Property="FontSize" Value="11.5"/>
+                <Setter Property="FontFamily" Value="Segoe UI Variable, Inter, sans-serif"/>
+                <Setter Property="HasDropShadow" Value="False"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ToolTip">
+                            <Border Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="8"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter />
+                            </Border>
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>
@@ -242,7 +289,7 @@
                                         <Thumb x:Name="thumb">
                                             <Thumb.Template>
                                                 <ControlTemplate TargetType="Thumb">
-                                                    <Border Background="#27272A" CornerRadius="4"/>
+                                                    <Border Background="#3F3F46" CornerRadius="4"/>
                                                 </ControlTemplate>
                                             </Thumb.Template>
                                         </Thumb>

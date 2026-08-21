@@ -84,9 +84,9 @@ namespace UnityUITransformer.App.Converters
         {
             if (value is bool isActive)
             {
-                return isActive ? 1.0 : 0.45;
+                return isActive ? 1.0 : 0.30;
             }
-            return 0.45;
+            return 0.30;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
@@ -101,9 +101,9 @@ namespace UnityUITransformer.App.Converters
         {
             if (value is bool isActive && isActive)
             {
-                return new SolidColorBrush((MediaColor)MediaColorConverter.ConvertFromString("#27272A"));
+                return new SolidColorBrush((MediaColor)MediaColorConverter.ConvertFromString("#007ACC"));
             }
-            return new SolidColorBrush((MediaColor)MediaColorConverter.ConvertFromString("#18181B"));
+            return new SolidColorBrush((MediaColor)MediaColorConverter.ConvertFromString("#333333"));
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
@@ -120,13 +120,27 @@ namespace UnityUITransformer.App.Converters
             {
                 return level switch
                 {
-                    ShimLogLevel.Info => new SolidColorBrush((MediaColor)MediaColorConverter.ConvertFromString("#38BDF8")), // Cyan
-                    ShimLogLevel.Warning => new SolidColorBrush((MediaColor)MediaColorConverter.ConvertFromString("#FBBF24")), // Amber
-                    ShimLogLevel.Error => new SolidColorBrush((MediaColor)MediaColorConverter.ConvertFromString("#F87171")), // Coral Red
-                    _ => new SolidColorBrush((MediaColor)MediaColorConverter.ConvertFromString("#34D399")) // Emerald / Success default
+                    ShimLogLevel.Info => new SolidColorBrush((MediaColor)MediaColorConverter.ConvertFromString("#4FC1FF")),    // Pastel Soft Blue
+                    ShimLogLevel.Warning => new SolidColorBrush((MediaColor)MediaColorConverter.ConvertFromString("#DCDCAA")), // Pastel Soft Yellow
+                    ShimLogLevel.Error => new SolidColorBrush((MediaColor)MediaColorConverter.ConvertFromString("#F44747")),   // Pastel Soft Red
+                    _ => new SolidColorBrush((MediaColor)MediaColorConverter.ConvertFromString("#6A9955"))                    // Pastel Soft Green
                 };
             }
-            return new SolidColorBrush((MediaColor)MediaColorConverter.ConvertFromString("#A1A1AA"));
+            return new SolidColorBrush((MediaColor)MediaColorConverter.ConvertFromString("#999999"));
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class EqualityToBooleanConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value == null || parameter == null) return false;
+            return value.ToString() == parameter.ToString();
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

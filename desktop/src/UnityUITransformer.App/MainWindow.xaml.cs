@@ -1,6 +1,4 @@
-using System.Collections.Specialized;
 using System.Windows;
-using UnityUITransformer.App.ViewModels;
 
 namespace UnityUITransformer.App
 {
@@ -12,22 +10,6 @@ namespace UnityUITransformer.App
         public MainWindow()
         {
             InitializeComponent();
-
-            if (DataContext is MainViewModel vm)
-            {
-                vm.LogEntries.CollectionChanged += OnLogEntriesCollectionChanged;
-            }
-        }
-
-        private void OnLogEntriesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
-        {
-            if (e.Action == NotifyCollectionChangedAction.Add && DataContext is MainViewModel vm && vm.AutoScrollEnabled)
-            {
-                Dispatcher.InvokeAsync(() =>
-                {
-                    TerminalScrollViewer?.ScrollToBottom();
-                });
-            }
         }
     }
 }

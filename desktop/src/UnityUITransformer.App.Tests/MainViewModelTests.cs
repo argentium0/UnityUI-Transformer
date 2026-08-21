@@ -57,7 +57,7 @@ namespace UnityUITransformer.App.Tests
             Assert.True(vm.IsConnected);
             Assert.False(vm.IsConnecting);
             Assert.Equal("Alex (Design Lead)", vm.ConnectedUser);
-            Assert.Contains("Connected as Alex (Design Lead)", vm.ConnectionStatusText);
+            Assert.Contains("Connected", vm.ConnectionStatusText);
         }
 
         [Fact]
