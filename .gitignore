@@ -44,6 +44,7 @@ Figma2UnityTest/
 *.pdb
 *.opendb
 *.idb
+*_wpftmp.csproj
 
 # ------------------------------------------------------------------------------
 # Section 3: Operating System, IDE & Assistant Rules
@@ -77,6 +78,10 @@ docs/
 *.key
 *.p12
 *.pfx
+session.dat
+**/session.dat
+**/*.local.json
+**/token*.json
 PAT_antigravity_github.txt
 secrets/
 

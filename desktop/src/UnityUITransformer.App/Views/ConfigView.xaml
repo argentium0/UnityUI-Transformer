@@ -55,13 +55,25 @@
                     </Border>
                 </Grid>
 
+                <!-- Validation Guardrail Red Error Banner -->
+                <Border Visibility="{Binding HasConfigValidationError, Converter={StaticResource BoolToVisConverter}}" 
+                        Background="#2D1A1A" BorderBrush="#EF4444" BorderThickness="1" CornerRadius="12" Padding="16,12" Margin="0,0,0,20">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="⚠️ " Foreground="#EF4444" FontSize="14" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding ConfigValidationError}" Foreground="#EF4444" FontWeight="Bold" FontSize="13" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
                 <Separator Background="#2D2E34" Margin="0,0,0,24"/>
 
                 <!-- Input 1: Figma File URL -->
                 <StackPanel Margin="0,0,0,22">
                     <Grid Margin="0,0,0,8">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="🎨 " FontSize="12" VerticalAlignment="Center"/>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <!-- Pure White Link Vector Icon -->
+                            <Viewbox Width="16" Height="16" Margin="0,0,8,0" VerticalAlignment="Center">
+                                <Path Data="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z" Fill="#FFFFFF"/>
+                            </Viewbox>
                             <TextBlock Text="Figma File / Node URL" Foreground="#FFFFFF" FontWeight="SemiBold" FontSize="13"/>
                         </StackPanel>
                         <TextBlock Text="✓ URL Verified" Foreground="#D4FF32" FontSize="11.5" FontWeight="SemiBold" HorizontalAlignment="Right"
@@ -81,9 +93,23 @@
                 <!-- Input 2: Unity Assets Directory -->
                 <StackPanel Margin="0,0,0,32">
                     <Grid Margin="0,0,0,8">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="📁 " FontSize="12" VerticalAlignment="Center"/>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <!-- Pure White Folder Vector Icon -->
+                            <Viewbox Width="16" Height="16" Margin="0,0,8,0" VerticalAlignment="Center">
+                                <Path Data="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" Fill="#FFFFFF"/>
+                            </Viewbox>
                             <TextBlock Text="Unity Target Assets Directory" Foreground="#FFFFFF" FontWeight="SemiBold" FontSize="13"/>
+                            
+                            <!-- Specific Directory Tooltip Icon -->
+                            <Border Width="16" Height="16" CornerRadius="8" Background="#1F2024" BorderBrush="#3F3F46" BorderThickness="1" Margin="8,0,0,0" VerticalAlignment="Center">
+                                <Border.ToolTip>
+                                    <ToolTip Background="#25262B" Foreground="#FFFFFF" BorderBrush="#333333" BorderThickness="1" Padding="12,10" MaxWidth="280">
+                                        <TextBlock Text="Select a folder inside your Unity project's 'Assets' directory (e.g., 'Assets/UI/Generated'). This ensures Unity's AssetDatabase automatically detects the new UXML and USS files." 
+                                                   TextWrapping="Wrap" FontSize="11.5" LineHeight="16"/>
+                                    </ToolTip>
+                                </Border.ToolTip>
+                                <TextBlock Text="i" FontFamily="Georgia, serif" FontStyle="Italic" FontWeight="Bold" FontSize="10" Foreground="#888888" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-1,0,0"/>
+                            </Border>
                         </StackPanel>
                         <TextBlock Text="✓ Directory Selected" Foreground="#D4FF32" FontSize="11.5" FontWeight="SemiBold" HorizontalAlignment="Right"
                                    Visibility="{Binding IsUnityPathValid, Converter={StaticResource BoolToVisConverter}}"/>

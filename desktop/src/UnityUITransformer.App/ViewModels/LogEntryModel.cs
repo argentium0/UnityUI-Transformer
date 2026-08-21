@@ -9,7 +9,7 @@ namespace UnityUITransformer.App.ViewModels
         public ShimLogLevel Level { get; }
         public string Message { get; }
 
-        public string FormattedTimestamp => Timestamp.ToString("HH:mm:ss.fff");
+        public string FormattedTimestamp => Timestamp.ToString("HH:mm:ss");
 
         public LogEntryModel(ShimLogLevel level, string message)
         {

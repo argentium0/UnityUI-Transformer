@@ -10,7 +10,12 @@ namespace UnityUITransformer.App.ViewModels
 
         public bool CanSync => Main.CanSync;
         public bool IsSyncing => Main.IsSyncing;
-        public double SyncProgress => Main.SyncProgress;
+        public bool IsSyncComplete => Main.IsSyncComplete;
+        public double SyncProgress
+        {
+            get => Main.SyncProgress;
+            set => Main.SyncProgress = value;
+        }
         public string SyncStatusText => Main.SyncStatusText;
         public bool AutoScrollEnabled
         {
@@ -22,6 +27,8 @@ namespace UnityUITransformer.App.ViewModels
 
         public ICommand SyncCommand => Main.SyncCommand;
         public ICommand ClearLogsCommand => Main.ClearLogsCommand;
+        public ICommand OpenFolderCommand => Main.OpenFolderCommand;
+        public ICommand ResetCommand => Main.ResetCommand;
 
         public SyncViewModel(MainViewModel main)
         {
@@ -33,6 +40,7 @@ namespace UnityUITransformer.App.ViewModels
         {
             if (e.PropertyName == nameof(MainViewModel.CanSync) ||
                 e.PropertyName == nameof(MainViewModel.IsSyncing) ||
+                e.PropertyName == nameof(MainViewModel.IsSyncComplete) ||
                 e.PropertyName == nameof(MainViewModel.SyncProgress) ||
                 e.PropertyName == nameof(MainViewModel.SyncStatusText) ||
                 e.PropertyName == nameof(MainViewModel.AutoScrollEnabled))

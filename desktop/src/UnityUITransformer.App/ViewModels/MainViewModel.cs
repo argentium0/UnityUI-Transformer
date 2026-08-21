@@ -4,8 +4,11 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using Microsoft.Win32;
 using UnityEngine;
+using UnityUITransformer.App.Services;
 
 namespace UnityUITransformer.App.ViewModels
 {
@@ -17,8 +20,16 @@ namespace UnityUITransformer.App.ViewModels
         private string _figmaUrl = string.Empty;
         private string _unityAssetsPath = string.Empty;
         private bool _isSyncing;
+        private bool _isSyncComplete;
         private double _syncProgress;
-        private string _syncStatusText = "Ready";
+        private string _syncStatusText = "Idle";
+
+        public bool IsSyncComplete
+        {
+            get => _isSyncComplete;
+            set => SetProperty(ref _isSyncComplete, value);
+        }
+
         private bool _isTerminalExpanded = true;
         private bool _autoScrollEnabled = true;
 
@@ -89,12 +100,66 @@ namespace UnityUITransformer.App.ViewModels
             }
         }
 
-        private string _avatarUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80";
+        private string _avatarUrl = "pack://application:,,,/Assets/figma_avatar.png";
 
         public string AvatarUrl
         {
             get => _avatarUrl;
-            set => SetProperty(ref _avatarUrl, value);
+            set
+            {
+                if (SetProperty(ref _avatarUrl, value))
+                {
+                    UpdateAvatarSource(value);
+                }
+            }
+        }
+
+        private ImageSource? _userAvatarSource;
+        public ImageSource? UserAvatarSource
+        {
+            get => _userAvatarSource;
+            set => SetProperty(ref _userAvatarSource, value);
+        }
+
+        private void UpdateAvatarSource(string? url)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                url = "pack://application:,,,/Assets/figma_avatar.png";
+            }
+
+            try
+            {
+                var kind = url.StartsWith("http", StringComparison.OrdinalIgnoreCase) 
+                    ? UriKind.Absolute 
+                    : UriKind.RelativeOrAbsolute;
+
+                var bitmap = new BitmapImage();
+                bitmap.BeginInit();
+                bitmap.UriSource = new Uri(url, kind);
+                bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                bitmap.EndInit();
+                if (bitmap.CanFreeze) bitmap.Freeze();
+
+                UserAvatarSource = bitmap;
+            }
+            catch
+            {
+                try
+                {
+                    var fallback = new BitmapImage();
+                    fallback.BeginInit();
+                    fallback.UriSource = new Uri("pack://application:,,,/Assets/figma_avatar.png", UriKind.Absolute);
+                    fallback.CacheOption = BitmapCacheOption.OnLoad;
+                    fallback.EndInit();
+                    if (fallback.CanFreeze) fallback.Freeze();
+
+                    UserAvatarSource = fallback;
+                }
+                catch { }
+            }
+
+            OnPropertyChanged(nameof(UserAvatarSource));
         }
 
         public string ConnectedUser
@@ -126,6 +191,26 @@ namespace UnityUITransformer.App.ViewModels
             {
                 if (SetProperty(ref _figmaUrl, value))
                 {
+                    if (!string.IsNullOrWhiteSpace(value))
+                    {
+                        if (!value.Contains("figma.com/file/") && !value.Contains("figma.com/design/"))
+                        {
+                            ConfigValidationError = "Invalid Figma URL. Please ensure it contains a specific node-id.";
+                        }
+                        else if (!value.Contains("node-id=") && !value.Contains("%3A"))
+                        {
+                            ConfigValidationError = "Invalid Figma URL. A specific node-id is required.";
+                        }
+                        else
+                        {
+                            ConfigValidationError = string.Empty;
+                        }
+                    }
+                    else
+                    {
+                        ConfigValidationError = string.Empty;
+                    }
+
                     OnPropertyChanged(nameof(IsFigmaUrlValid));
                     OnPropertyChanged(nameof(IsStep2Completed));
                     OnPropertyChanged(nameof(IsStep3ActiveState));
@@ -153,7 +238,8 @@ namespace UnityUITransformer.App.ViewModels
 
         public bool IsFigmaUrlValid =>
             !string.IsNullOrWhiteSpace(FigmaUrl) &&
-            (FigmaUrl.Contains("figma.com/file/") || FigmaUrl.Contains("figma.com/design/") || FigmaUrl.StartsWith("https://"));
+            (FigmaUrl.Contains("figma.com/file/") || FigmaUrl.Contains("figma.com/design/")) &&
+            (FigmaUrl.Contains("node-id=") || FigmaUrl.Contains("%3A"));
 
         public bool IsUnityPathValid =>
             !string.IsNullOrWhiteSpace(UnityAssetsPath);
@@ -219,25 +305,115 @@ namespace UnityUITransformer.App.ViewModels
         public ICommand ToggleTerminalCommand { get; }
         public ICommand ClearLogsCommand { get; }
         public ICommand NavigateToStepCommand { get; }
+        public ICommand OpenFolderCommand { get; }
+        public ICommand ResetCommand { get; }
+        public ICommand DisconnectCommand { get; }
+        public ICommand ToggleSettingsCommand { get; }
+        public ICommand CloseSettingsCommand { get; }
+        public ICommand DownloadManualCommand { get; }
 
-        public MainViewModel()
+        private bool _isSettingsOpen;
+        public bool IsSettingsOpen
         {
+            get => _isSettingsOpen;
+            set
+            {
+                if (SetProperty(ref _isSettingsOpen, value) && value)
+                {
+                    SettingsStatusMessage = string.Empty;
+                }
+            }
+        }
+
+        private string _settingsStatusMessage = string.Empty;
+        public string SettingsStatusMessage
+        {
+            get => _settingsStatusMessage;
+            set
+            {
+                if (SetProperty(ref _settingsStatusMessage, value))
+                {
+                    OnPropertyChanged(nameof(HasSettingsStatusMessage));
+                }
+            }
+        }
+
+        public bool HasSettingsStatusMessage => !string.IsNullOrWhiteSpace(SettingsStatusMessage);
+
+        private string _configValidationError = string.Empty;
+        public string ConfigValidationError
+        {
+            get => _configValidationError;
+            set
+            {
+                if (SetProperty(ref _configValidationError, value))
+                {
+                    OnPropertyChanged(nameof(HasConfigValidationError));
+                    OnPropertyChanged(nameof(ErrorMessage));
+                    OnPropertyChanged(nameof(HasError));
+                }
+            }
+        }
+
+        public bool HasConfigValidationError => !string.IsNullOrWhiteSpace(ConfigValidationError);
+        public string ErrorMessage => ConfigValidationError;
+        public bool HasError => HasConfigValidationError;
+
+        private readonly SupabaseAuthService _supabaseAuthService;
+        private readonly FigmaApiService _figmaApiService;
+        private readonly UxmlGenerator _uxmlGenerator;
+        private readonly UssGenerator _ussGenerator;
+        private readonly ExportService _exportService;
+        private readonly SecureStorageService _secureStorageService;
+
+        public MainViewModel(
+            SupabaseAuthService? supabaseAuthService = null,
+            FigmaApiService? figmaApiService = null,
+            UxmlGenerator? uxmlGenerator = null,
+            UssGenerator? ussGenerator = null,
+            ExportService? exportService = null,
+            SecureStorageService? secureStorageService = null)
+        {
+            _supabaseAuthService = supabaseAuthService ?? new SupabaseAuthService();
+            _figmaApiService = figmaApiService ?? new FigmaApiService(_supabaseAuthService);
+            _uxmlGenerator = uxmlGenerator ?? new UxmlGenerator();
+            _ussGenerator = ussGenerator ?? new UssGenerator();
+            _exportService = exportService ?? new ExportService();
+            _secureStorageService = secureStorageService ?? new SecureStorageService();
+
             AuthVM = new AuthViewModel(this);
             ConfigVM = new ConfigViewModel(this);
             SyncVM = new SyncViewModel(this);
 
             _currentView = AuthVM;
+            UpdateAvatarSource(AvatarUrl);
 
-            ConnectCommand = new AsyncRelayCommand(ExecuteConnectAsync, () => !IsConnecting);
-            BrowseFolderCommand = new RelayCommand(ExecuteBrowseFolder, () => IsStep2ActiveState);
-            ContinueToSyncCommand = new RelayCommand(ExecuteContinueToSync, () => IsStep2Completed);
-            SyncCommand = new AsyncRelayCommand(ExecuteSyncAsync, () => CanSync);
+            ConnectCommand = new RelayCommand(async _ => await ExecuteConnectAsync(), _ => !IsConnecting);
+            BrowseFolderCommand = new RelayCommand(_ => ExecuteBrowseFolder(), _ => IsStep2ActiveState);
+            ContinueToSyncCommand = new RelayCommand(async _ => await ExecuteContinueToSync(), _ => CanNavigateToSync);
+            SyncCommand = new RelayCommand(async _ => await ExecuteSyncAsync(), _ => CanSync);
             ToggleTerminalCommand = new RelayCommand(() => IsTerminalExpanded = !IsTerminalExpanded);
             ClearLogsCommand = new RelayCommand(() => LogEntries.Clear());
-            NavigateToStepCommand = new RelayCommand(ExecuteNavigateToStep, CanNavigateToStep);
+            NavigateToStepCommand = new RelayCommand(param => ExecuteNavigateToStep(param), param => CanNavigateToStep(param));
+            OpenFolderCommand = new RelayCommand(_ => ExecuteOpenFolder(), _ => !IsSyncing);
+            ResetCommand = new RelayCommand(_ => ExecuteReset(), _ => !IsSyncing);
+            DisconnectCommand = new RelayCommand(async _ => await ExecuteDisconnectAsync());
+            ToggleSettingsCommand = new RelayCommand(() => IsSettingsOpen = !IsSettingsOpen);
+            CloseSettingsCommand = new RelayCommand(() => IsSettingsOpen = false);
+            DownloadManualCommand = new RelayCommand(_ => ExecuteDownloadManual());
 
             // Subscribe to ShimLogSink live events
             ShimLogSink.OnLog += OnShimLogReceived;
+
+            // Check for saved DPAPI encrypted session token
+            var savedToken = _secureStorageService.LoadSessionToken();
+            if (!string.IsNullOrEmpty(savedToken))
+            {
+                IsConnected = true;
+                ConnectedUser = "Figma Developer";
+                AvatarUrl = "pack://application:,,,/Assets/figma_avatar.png";
+                ShimLogSink.RaiseLog(ShimLogLevel.Info, "[DPAPI SECURE LOGIN] Restored encrypted session token from Windows ProtectedData.");
+            }
 
             // Log initial startup event
             ShimLogSink.RaiseLog(ShimLogLevel.Info, "Figma → Unity UI Transformer (Pro Max v1.0.0) initialized.");
@@ -283,20 +459,53 @@ namespace UnityUITransformer.App.ViewModels
 
         private async Task ExecuteConnectAsync()
         {
+            if (IsConnecting || IsConnected) return;
+
             IsConnecting = true;
-            ShimLogSink.RaiseLog(ShimLogLevel.Info, "Initiating OAuth 2.0 PKCE handshake with Figma API...");
+            ShimLogSink.RaiseLog(ShimLogLevel.Info, "Initiating Figma OAuth sign-in via Supabase C# SDK...");
 
-            await Task.Delay(1200); // Simulate network handshake
+            try
+            {
+                var result = await _supabaseAuthService.AuthenticateWithFigmaAsync();
 
-            IsConnecting = false;
-            IsConnected = true;
-            ConnectedUser = "Alex (Design Lead)";
+                if (result.IsSuccess)
+                {
+                    ConnectedUser = result.UserName;
+                    if (!string.IsNullOrEmpty(result.AvatarUrl))
+                    {
+                        AvatarUrl = result.AvatarUrl;
+                    }
+                    IsConnected = true;
 
-            ShimLogSink.RaiseLog(ShimLogLevel.Info, "Authentication token successfully stored in CoreVault.");
-            ShimLogSink.RaiseLog(ShimLogLevel.Info, $"Authenticated as {ConnectedUser}. Transitioning to Screen 2: Target Configuration.");
+                    if (!string.IsNullOrEmpty(result.AccessToken))
+                    {
+                        _secureStorageService.SaveSessionToken(result.AccessToken);
 
-            // Transition automatically to Screen 2 (ConfigView)
-            CurrentStepIndex = 2;
+                        // Query Figma REST API /v1/me for user handle and profile image URL
+                        var (handle, imgUrl, _) = await _figmaApiService.GetFigmaUserProfileAsync(result.AccessToken);
+                        if (!string.IsNullOrEmpty(handle)) ConnectedUser = handle;
+                        if (!string.IsNullOrEmpty(imgUrl)) AvatarUrl = imgUrl;
+                    }
+
+                    ShimLogSink.RaiseLog(ShimLogLevel.Info, "Figma OAuth session token successfully retrieved via Supabase.");
+                    ShimLogSink.RaiseLog(ShimLogLevel.Info, $"Authenticated as {ConnectedUser}. Auto-transitioning to Screen 2: Target Configuration.");
+
+                    // Transition automatically to Screen 2 (ConfigView)
+                    CurrentStepIndex = 2;
+                }
+                else
+                {
+                    ShimLogSink.RaiseLog(ShimLogLevel.Error, $"Figma OAuth authentication failed: {result.ErrorMessage}");
+                }
+            }
+            catch (Exception ex)
+            {
+                ShimLogSink.RaiseLog(ShimLogLevel.Error, $"Supabase OAuth exception: {ex.Message}");
+            }
+            finally
+            {
+                IsConnecting = false;
+            }
         }
 
         private void ExecuteBrowseFolder()
@@ -312,16 +521,155 @@ namespace UnityUITransformer.App.ViewModels
             if (dialog.ShowDialog() == true)
             {
                 UnityAssetsPath = dialog.FolderName;
+                ConfigValidationError = string.Empty;
                 ShimLogSink.RaiseLog(ShimLogLevel.Info, $"Selected Unity Target Directory: {UnityAssetsPath}");
             }
         }
 
-        private void ExecuteContinueToSync()
+        private Task ExecuteContinueToSync()
         {
-            if (IsStep2Completed)
+            ConfigValidationError = string.Empty;
+
+            // 1. URL Validation Guardrail
+            if (string.IsNullOrWhiteSpace(FigmaUrl) || 
+               (!FigmaUrl.Contains("figma.com/file/") && !FigmaUrl.Contains("figma.com/design/")))
             {
-                ShimLogSink.RaiseLog(ShimLogLevel.Info, "Target configuration verified. Transitioning to Screen 3: Sync & Log Stream.");
-                CurrentStepIndex = 3;
+                ConfigValidationError = "Invalid Figma URL. Please ensure it contains a specific node-id.";
+                return Task.CompletedTask;
+            }
+
+            if (!FigmaUrl.Contains("node-id=") && !FigmaUrl.Contains("%3A"))
+            {
+                ConfigValidationError = "Invalid Figma URL. A specific node-id is required.";
+                return Task.CompletedTask;
+            }
+
+            // 2. Directory Validation Guardrail
+            if (string.IsNullOrWhiteSpace(UnityAssetsPath) || !System.IO.Directory.Exists(UnityAssetsPath))
+            {
+                ConfigValidationError = "Please select a valid local Unity directory.";
+                return Task.CompletedTask;
+            }
+
+            IsSyncComplete = false;
+            CurrentStepIndex = 3;
+            return Task.CompletedTask;
+        }
+
+        private void ExecuteOpenFolder()
+        {
+            try
+            {
+                string targetDir = string.IsNullOrWhiteSpace(UnityAssetsPath)
+                    ? System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "UI", "Generated")
+                    : UnityAssetsPath;
+
+                if (!System.IO.Directory.Exists(targetDir))
+                {
+                    System.IO.Directory.CreateDirectory(targetDir);
+                }
+
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = targetDir,
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                ShimLogSink.RaiseLog(ShimLogLevel.Error, $"Failed to open folder: {ex.Message}");
+            }
+        }
+
+        private void ExecuteReset()
+        {
+            IsSyncComplete = false;
+            CurrentStepIndex = 2;
+        }
+
+        private async Task ExecuteDisconnectAsync()
+        {
+            await _supabaseAuthService.SignOutAsync();
+            _secureStorageService.ClearSession();
+            IsConnected = false;
+            ConnectedUser = "Disconnected";
+            _avatarUrl = "pack://application:,,,/Assets/figma_avatar.png";
+            UserAvatarSource = null;
+            OnPropertyChanged(nameof(AvatarUrl));
+            OnPropertyChanged(nameof(UserAvatarSource));
+            UpdateAvatarSource("pack://application:,,,/Assets/figma_avatar.png");
+            CurrentStepIndex = 1;
+            ConfigValidationError = string.Empty;
+            IsSettingsOpen = false;
+            ShimLogSink.RaiseLog(ShimLogLevel.Info, "[SESSION DISCONNECTED] Purged DPAPI session.dat file and reset to Step 1 (AuthView).");
+        }
+
+        private void ExecuteDownloadManual()
+        {
+            try
+            {
+                var dialog = new Microsoft.Win32.OpenFolderDialog
+                {
+                    Title = "Select Destination Folder for User Manual"
+                };
+
+                if (dialog.ShowDialog() == true)
+                {
+                    string folder = dialog.FolderName;
+                    string pdfPath = System.IO.Path.Combine(folder, "UnityUI_Transformer_User_Manual.pdf");
+                    string mdPath = System.IO.Path.Combine(folder, "UserManual.md");
+
+                    // Generate Comprehensive PDF Manual
+                    ManualPdfGenerator.GeneratePdfManual(pdfPath);
+
+                    string manualContent = @"# UnityUI Transformer — User Manual & Setup Guide
+
+Welcome to the **UnityUI Transformer**! This utility bridges Figma design frames directly into Unity UI Toolkit (`UXML` layout and `USS` style sheets).
+
+---
+
+## 1. Quick Start Guide
+
+### Step 1: Figma Authentication
+1. Launch UnityUI Transformer.
+2. Click **Connect with Figma** to authenticate using your Figma account via OAuth.
+3. Once authenticated, your session token is securely encrypted locally via **Windows DPAPI** (`ProtectedData`).
+
+### Step 2: Configuration
+1. Open your design file in Figma.
+2. Select any **Frame** or **Component** you wish to export into Unity.
+3. Copy the URL from your browser address bar (ensure it includes `node-id=...`).
+4. Paste the URL into the **Figma Design File / Node URL** text box.
+5. Browse and select your target Unity project directory (e.g. `C:\MyProject\Assets\UI`).
+
+### Step 3: Transformation Pipeline
+1. Click **Continue to Sync**.
+2. Review your sync configuration and hit **Start Transformation**.
+3. Live transformation logs will stream in the console terminal.
+4. Upon completion, click **Open Target Folder** to view your generated `.uxml` and `.uss` assets in Unity!
+
+---
+
+## 2. Advanced Tips & Troubleshooting
+
+- **Node ID Requirement:** Figma URLs must contain a specific `node-id=` parameter so the engine knows which frame to process.
+- **Auto Layout to USS Flexbox:** Figma Auto-Layout properties (padding, gap, alignment, flex-direction) automatically map to Unity UI Toolkit USS flex attributes.
+- **Session Management:** You can clear your stored credentials at any time from the app Settings menu using **Disconnect Account**.
+
+---
+
+*Generated by UnityUI Transformer (Pro Max v1.0.0)*
+";
+
+                    System.IO.File.WriteAllText(mdPath, manualContent);
+                    SettingsStatusMessage = $"UnityUI_Transformer_User_Manual.pdf exported to {folder}";
+                    ShimLogSink.RaiseLog(ShimLogLevel.Info, $"User manual exported to: {pdfPath}");
+                }
+            }
+            catch (Exception ex)
+            {
+                SettingsStatusMessage = $"Export failed: {ex.Message}";
+                ShimLogSink.RaiseLog(ShimLogLevel.Error, $"Failed to export user manual: {ex.Message}");
             }
         }
 
@@ -330,52 +678,121 @@ namespace UnityUITransformer.App.ViewModels
             if (!CanSync) return;
 
             IsSyncing = true;
+            IsSyncComplete = false;
             SyncProgress = 0;
-            SyncStatusText = "Initializing Transformation Engine...";
+            SyncStatusText = "Initializing Engine...";
 
-            ShimLogSink.RaiseLog(ShimLogLevel.Info, "==================================================");
-            ShimLogSink.RaiseLog(ShimLogLevel.Info, "⚡ STARTING FIGMA → UNITY TRANSLATION PIPELINE");
-            ShimLogSink.RaiseLog(ShimLogLevel.Info, $"Figma Document: {FigmaUrl}");
-            ShimLogSink.RaiseLog(ShimLogLevel.Info, $"Target Path: {UnityAssetsPath}");
+            // Clear previous terminal clutter
+            if (Application.Current != null)
+            {
+                Application.Current.Dispatcher.Invoke(() => LogEntries.Clear());
+            }
+            else
+            {
+                lock (_logEntriesLock)
+                {
+                    LogEntries.Clear();
+                }
+            }
 
-            await Task.Delay(500);
-            SyncProgress = 25;
-            SyncStatusText = "Fetching Figma IR Node Tree...";
-            ShimLogSink.RaiseLog(ShimLogLevel.Info, "Deserializing Figma REST payload & extracting Zod IR schema...");
+            ShimLogSink.RaiseLog(ShimLogLevel.Info, "Starting Figma → Unity UI transformation...");
 
-            await Task.Delay(600);
-            SyncProgress = 55;
-            SyncStatusText = "Generating USS Design Tokens & Flex Layouts...";
-            ShimLogSink.RaiseLog(ShimLogLevel.Info, "Resolved 18 Color Variables, 6 Typography Ramps, and 34 Visual Element Nodes.");
-            ShimLogSink.RaiseLog(ShimLogLevel.Warning, "Node 'Card_Hero_Effect' has complex background-blur. Generating high-fidelity SVG raster fallback.");
+            try
+            {
+                await Task.Run(async () =>
+                {
+                    await Task.Delay(250);
+                    UpdateProgress(25, "Fetching Figma design nodes...");
 
-            await Task.Delay(700);
-            SyncProgress = 85;
-            SyncStatusText = "Compiling UXML Visual Tree & Assets...";
-            ShimLogSink.RaiseLog(ShimLogLevel.Info, "Generated VisualTreeAsset 'MainMenuScreen.uxml' and stylesheet 'MainMenuScreen.uss'.");
-            ShimLogSink.RaiseLog(ShimLogLevel.Info, "Writing asset artifacts into target directory...");
+                    var (fileId, nodeId) = FigmaApiService.ParseFigmaUrl(FigmaUrl);
+                    ShimLogSink.RaiseLog(ShimLogLevel.Info, $"Fetching Figma node {nodeId} (File ID: {fileId})...");
 
-            await Task.Delay(500);
-            SyncProgress = 100;
-            SyncStatusText = "Sync Complete!";
-            ShimLogSink.RaiseLog(ShimLogLevel.Info, "✓ FIGMA → UNITY TRANSLATION PIPELINE FINISHED SUCCESSFULLY");
-            ShimLogSink.RaiseLog(ShimLogLevel.Info, "==================================================");
+                    var rootNode = await _figmaApiService.GetFigmaNodeModelAsync(FigmaUrl);
+                    string rootName = rootNode.Name ?? "MainScreen";
 
-            IsSyncing = false;
+                    await Task.Delay(300);
+                    UpdateProgress(55, "Generating UXML layout tree...");
+
+                    string ussFileName = $"{UxmlGenerator.SanitizeName(rootName)}.uss";
+                    string uxmlContent = _uxmlGenerator.GenerateUxml(rootNode, ussFileName);
+                    ShimLogSink.RaiseLog(ShimLogLevel.Info, $"Generated {UxmlGenerator.SanitizeName(rootName)}.uxml layout.");
+
+                    await Task.Delay(300);
+                    UpdateProgress(80, "Generating USS styles...");
+
+                    string ussContent = _ussGenerator.GenerateUss(rootNode);
+                    ShimLogSink.RaiseLog(ShimLogLevel.Info, $"Generated {ussFileName} stylesheet.");
+
+                    await Task.Delay(250);
+                    UpdateProgress(95, "Saving output files...");
+
+                    string uxmlPath = await _exportService.ExportUxmlAsync(uxmlContent, UnityAssetsPath, rootName);
+                    string ussPath = await _exportService.ExportUssAsync(ussContent, UnityAssetsPath, rootName);
+
+                    await Task.Delay(200);
+                    UpdateProgress(100, "Transformation Complete!");
+
+                    ShimLogSink.RaiseLog(ShimLogLevel.Info, $"Saved {System.IO.Path.GetFileName(uxmlPath)} and {System.IO.Path.GetFileName(ussPath)} to {UnityAssetsPath}");
+                    ShimLogSink.RaiseLog(ShimLogLevel.Info, "✓ Transformation finished successfully.");
+
+                    if (Application.Current != null)
+                    {
+                        _ = Application.Current.Dispatcher.InvokeAsync(() => IsSyncComplete = true);
+                    }
+                    else
+                    {
+                        IsSyncComplete = true;
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                ShimLogSink.RaiseLog(ShimLogLevel.Error, $"Transformation Error: {ex.Message}");
+            }
+            finally
+            {
+                IsSyncing = false;
+            }
         }
 
-        private void OnShimLogReceived(object? sender, ShimLogEventArgs e)
+        private void UpdateProgress(double progress, string statusText)
         {
             if (Application.Current != null)
             {
                 Application.Current.Dispatcher.InvokeAsync(() =>
                 {
-                    LogEntries.Add(new LogEntryModel(e.Level, e.Message));
+                    SyncProgress = progress;
+                    SyncStatusText = statusText;
                 });
             }
             else
             {
-                LogEntries.Add(new LogEntryModel(e.Level, e.Message));
+                SyncProgress = progress;
+                SyncStatusText = statusText;
+            }
+        }
+
+        private readonly object _logEntriesLock = new object();
+
+        private void OnShimLogReceived(object? sender, ShimLogEventArgs e)
+        {
+            var entry = new LogEntryModel(e.Level, e.Message);
+            if (Application.Current != null)
+            {
+                Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    lock (_logEntriesLock)
+                    {
+                        LogEntries.Add(entry);
+                    }
+                });
+            }
+            else
+            {
+                lock (_logEntriesLock)
+                {
+                    LogEntries.Add(entry);
+                }
             }
         }
 

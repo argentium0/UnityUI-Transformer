@@ -15,10 +15,6 @@
         WindowStartupLocation="CenterScreen"
         ResizeMode="CanResize">
 
-    <Window.DataContext>
-        <vm:MainViewModel />
-    </Window.DataContext>
-
     <Window.Resources>
         <!-- DataTemplate Mappings for MVVM 3-Screen Navigation -->
         <DataTemplate DataType="{x:Type vm:AuthViewModel}">
@@ -30,118 +26,126 @@
         <DataTemplate DataType="{x:Type vm:SyncViewModel}">
             <views:SyncView />
         </DataTemplate>
+        <BitmapImage x:Key="DefaultAvatar" UriSource="pack://application:,,,/Assets/figma_avatar.png" />
     </Window.Resources>
 
-    <!-- 2-COLUMN DRIBBBLE DASHBOARD GRID (COLUMN 0: 240PX NAVIGATION RAIL | COLUMN 1: WORKSPACE) -->
+    <!-- 2-COLUMN DRIBBBLE DASHBOARD GRID (COLUMN 0: 90PX CIRCULAR NAVIGATION | COLUMN 1: WORKSPACE) -->
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="240"/> <!-- Expanded High-Contrast Navigation Rail -->
-            <ColumnDefinition Width="*"/>   <!-- Main Viewport Content -->
+            <ColumnDefinition Width="90"/> <!-- Sleek 90px Circular Icon Navigation Sidebar -->
+            <ColumnDefinition Width="*"/>  <!-- Main Viewport Content -->
         </Grid.ColumnDefinitions>
 
-        <!-- ================= 1. COLUMN 0: EXPANDED NAVIGATION RAIL (240PX) ================= -->
+        <!-- ================= 1. COLUMN 0: CIRCULAR ICON SIDEBAR (90PX) ================= -->
         <Border Grid.Column="0" 
-                Background="#121215" 
+                Background="#18181A" 
                 BorderBrush="#25262B" 
                 BorderThickness="0,0,1,0">
             <Grid Margin="0,20">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/> <!-- Top Logo & App Title Block -->
-                    <RowDefinition Height="*"/>    <!-- Stacked High-Contrast Step Rail Buttons -->
-                    <RowDefinition Height="Auto"/> <!-- Bottom Connection Status Badge -->
+                    <RowDefinition Height="Auto"/> <!-- Top App Logo Badge -->
+                    <RowDefinition Height="*"/>    <!-- Stacked High-Contrast Circular Step Vector Icon Buttons -->
+                    <RowDefinition Height="Auto"/> <!-- Bottom Global Info & Settings Stack -->
                 </Grid.RowDefinitions>
 
-                <!-- Top Logo Icon & App Title Block -->
-                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="20,4,20,0" VerticalAlignment="Center">
-                    <Border Width="38" Height="38" CornerRadius="10" Background="#18181A" BorderBrush="#D4FF32" BorderThickness="1.5" Margin="0,0,12,0">
-                        <Viewbox Width="19" Height="19" HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <Canvas Width="24" Height="24">
-                                <Path Data="M12,2 L21,7 L21,17 L12,22 L3,17 L3,7 Z" Stroke="#D4FF32" StrokeThickness="1.8" Fill="#1F2414"/>
-                                <Path Data="M12,2 L12,12 L21,7 M12,12 L3,7 M12,12 L12,22" Stroke="#D4FF32" StrokeThickness="1.5"/>
-                                <Ellipse Canvas.Left="10" Canvas.Top="10" Width="4" Height="4" Fill="#D4FF32"/>
-                            </Canvas>
-                        </Viewbox>
-                    </Border>
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="UnityUI" Foreground="#FFFFFF" FontWeight="Bold" FontSize="15"/>
-                        <TextBlock Text="Transformer" Foreground="#9E9E9E" FontSize="11" FontWeight="SemiBold"/>
-                    </StackPanel>
-                </StackPanel>
+                <!-- Top App Logo Icon Badge -->
+                <Border Grid.Row="0" Width="44" Height="44" CornerRadius="22" Background="#18181A" BorderBrush="#D4FF32" BorderThickness="1.5" HorizontalAlignment="Center">
+                    <Viewbox Width="22" Height="22" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Canvas Width="24" Height="24">
+                            <Path Data="M12,2 L21,7 L21,17 L12,22 L3,17 L3,7 Z" Stroke="#D4FF32" StrokeThickness="1.8" Fill="#1F2414"/>
+                            <Path Data="M12,2 L12,12 L21,7 M12,12 L3,7 M12,12 L12,22" Stroke="#D4FF32" StrokeThickness="1.5"/>
+                            <Ellipse Canvas.Left="10" Canvas.Top="10" Width="4" Height="4" Fill="#D4FF32"/>
+                        </Canvas>
+                    </Viewbox>
+                </Border>
 
-                <!-- Stacked High-Contrast Navigation Rail Buttons -->
-                <StackPanel Grid.Row="1" Margin="16,32,16,0" VerticalAlignment="Top">
-                    <!-- Step 1 Button: Authentication -->
+                <!-- Stacked 48x48 Circular Step Vector Icon Buttons -->
+                <StackPanel Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center">
+                    
+                    <!-- STEP 1: AUTHENTICATION (Lock Icon) -->
                     <Button Command="{Binding NavigateToStepCommand}" CommandParameter="1" 
                             ToolTip="1. Authentication"
-                            Margin="0,0,0,10" HorizontalAlignment="Stretch">
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="01" FontWeight="Bold" FontSize="13" Margin="0,0,14,0"/>
-                            <TextBlock Text="Authentication" FontWeight="Bold" FontSize="13"/>
-                        </StackPanel>
+                            Margin="0,0,0,22" HorizontalAlignment="Center">
+                        <Viewbox Width="20" Height="20" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Path Data="M12 2C9.24 2 7 4.24 7 7v3H6c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-8c0-1.1-.9-2-2-2h-1V7c0-2.76-2.24-5-5-5zm-3 5c0-1.66 1.34-3 3-3s3 1.34 3 3v3H9V7zm3 10c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z">
+                                <Path.Style>
+                                    <Style TargetType="Path">
+                                        <Setter Property="Fill" Value="#FFFFFF"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding CurrentStepIndex, Converter={StaticResource EqualityToBoolConverter}, ConverterParameter=1}" Value="True">
+                                                <Setter Property="Fill" Value="#000000"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Path.Style>
+                            </Path>
+                        </Viewbox>
                         <Button.Style>
-                            <Style TargetType="Button" BasedOn="{StaticResource SidebarRailButtonStyle}">
+                            <Style TargetType="Button" BasedOn="{StaticResource SidebarCircleButtonStyle}">
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding CurrentStepIndex, Converter={StaticResource EqualityToBoolConverter}, ConverterParameter=1}" Value="True">
                                         <Setter Property="Background" Value="#D4FF32"/>
-                                        <Setter Property="Foreground" Value="#000000"/>
-                                        <Setter Property="BorderThickness" Value="0"/>
-                                        <Setter Property="Effect">
-                                            <Setter.Value>
-                                                <DropShadowEffect Color="#D4FF32" BlurRadius="10" ShadowDepth="1" Opacity="0.3"/>
-                                            </Setter.Value>
-                                        </Setter>
+                                        <Setter Property="Effect" Value="{x:Null}"/>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
                         </Button.Style>
                     </Button>
 
-                    <!-- Step 2 Button: Target Config -->
+                    <!-- STEP 2: TARGET CONFIGURATION (Folder Icon) -->
                     <Button Command="{Binding NavigateToStepCommand}" CommandParameter="2" 
                             ToolTip="2. Target Configuration"
-                            Margin="0,0,0,10" HorizontalAlignment="Stretch">
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="02" FontWeight="Bold" FontSize="13" Margin="0,0,14,0"/>
-                            <TextBlock Text="Target Config" FontWeight="Bold" FontSize="13"/>
-                        </StackPanel>
+                            Margin="0,0,0,22" HorizontalAlignment="Center">
+                        <Viewbox Width="20" Height="20" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Path Data="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z">
+                                <Path.Style>
+                                    <Style TargetType="Path">
+                                        <Setter Property="Fill" Value="#FFFFFF"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding CurrentStepIndex, Converter={StaticResource EqualityToBoolConverter}, ConverterParameter=2}" Value="True">
+                                                <Setter Property="Fill" Value="#000000"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Path.Style>
+                            </Path>
+                        </Viewbox>
                         <Button.Style>
-                            <Style TargetType="Button" BasedOn="{StaticResource SidebarRailButtonStyle}">
+                            <Style TargetType="Button" BasedOn="{StaticResource SidebarCircleButtonStyle}">
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding CurrentStepIndex, Converter={StaticResource EqualityToBoolConverter}, ConverterParameter=2}" Value="True">
                                         <Setter Property="Background" Value="#D4FF32"/>
-                                        <Setter Property="Foreground" Value="#000000"/>
-                                        <Setter Property="BorderThickness" Value="0"/>
-                                        <Setter Property="Effect">
-                                            <Setter.Value>
-                                                <DropShadowEffect Color="#D4FF32" BlurRadius="10" ShadowDepth="1" Opacity="0.3"/>
-                                            </Setter.Value>
-                                        </Setter>
+                                        <Setter Property="Effect" Value="{x:Null}"/>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
                         </Button.Style>
                     </Button>
 
-                    <!-- Step 3 Button: Sync Pipeline -->
+                    <!-- STEP 3: SYNC PIPELINE (Lightning Bolt Icon) -->
                     <Button Command="{Binding NavigateToStepCommand}" CommandParameter="3" 
                             ToolTip="3. Sync Pipeline"
-                            HorizontalAlignment="Stretch">
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="03" FontWeight="Bold" FontSize="13" Margin="0,0,14,0"/>
-                            <TextBlock Text="Sync Pipeline" FontWeight="Bold" FontSize="13"/>
-                        </StackPanel>
+                            HorizontalAlignment="Center">
+                        <Viewbox Width="20" Height="20" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Path Data="M7 2v11h3v9l7-12h-4l4-8H7z">
+                                <Path.Style>
+                                    <Style TargetType="Path">
+                                        <Setter Property="Fill" Value="#FFFFFF"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding CurrentStepIndex, Converter={StaticResource EqualityToBoolConverter}, ConverterParameter=3}" Value="True">
+                                                <Setter Property="Fill" Value="#000000"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Path.Style>
+                            </Path>
+                        </Viewbox>
                         <Button.Style>
-                            <Style TargetType="Button" BasedOn="{StaticResource SidebarRailButtonStyle}">
+                            <Style TargetType="Button" BasedOn="{StaticResource SidebarCircleButtonStyle}">
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding CurrentStepIndex, Converter={StaticResource EqualityToBoolConverter}, ConverterParameter=3}" Value="True">
                                         <Setter Property="Background" Value="#D4FF32"/>
-                                        <Setter Property="Foreground" Value="#000000"/>
-                                        <Setter Property="BorderThickness" Value="0"/>
-                                        <Setter Property="Effect">
-                                            <Setter.Value>
-                                                <DropShadowEffect Color="#D4FF32" BlurRadius="10" ShadowDepth="1" Opacity="0.3"/>
-                                            </Setter.Value>
-                                        </Setter>
+                                        <Setter Property="Effect" Value="{x:Null}"/>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
@@ -149,27 +153,89 @@
                     </Button>
                 </StackPanel>
 
-                <!-- Bottom Sidebar Connection Status Badge -->
-                <Border Grid.Row="2" Margin="16,0,16,0" Background="#18181C" BorderBrush="#25262B" BorderThickness="1" CornerRadius="12" Padding="14,10">
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Ellipse x:Name="SidebarStatusDot" Width="8" Height="8" Fill="#10B981" Margin="0,0,10,0">
-                            <Ellipse.Triggers>
-                                <EventTrigger RoutedEvent="Ellipse.Loaded">
-                                    <BeginStoryboard>
-                                        <Storyboard RepeatBehavior="Forever" AutoReverse="True">
-                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.35" To="1.0" Duration="0:0:1.2">
-                                                <DoubleAnimation.EasingFunction>
-                                                    <SineEase EasingMode="EaseInOut"/>
-                                                </DoubleAnimation.EasingFunction>
-                                            </DoubleAnimation>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </EventTrigger>
-                            </Ellipse.Triggers>
-                        </Ellipse>
-                        <TextBlock Text="{Binding ConnectionStatusText}" Foreground="#9E9E9E" FontSize="12" FontWeight="Medium"/>
-                    </StackPanel>
-                </Border>
+                <!-- Bottom Sidebar Stack: Consolidated Global Info Toggle Button + Settings Button -->
+                <StackPanel Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,16">
+                    
+                    <!-- Single Consolidated Circular Info 'i' Button -->
+                    <Grid HorizontalAlignment="Center" Margin="0,0,0,14">
+                        <ToggleButton x:Name="GlobalInfoToggle" 
+                                      Width="36" Height="36" 
+                                      Style="{StaticResource InfoToggleButtonStyle}"
+                                      ToolTip="View Step Instructions"/>
+
+                        <!-- Context-Aware Dynamic Instructions Popup -->
+                        <Popup IsOpen="{Binding IsChecked, ElementName=GlobalInfoToggle}" Placement="Right" AllowsTransparency="True" StaysOpen="False" HorizontalOffset="14">
+                            <Border Background="#25262B" BorderBrush="#333333" BorderThickness="1" CornerRadius="12" Padding="16" MaxWidth="280">
+                                <Border.Effect>
+                                    <DropShadowEffect Color="Black" BlurRadius="16" ShadowDepth="4" Opacity="0.45"/>
+                                </Border.Effect>
+                                <Grid>
+                                    <!-- Step 1 Instructions (Auth) -->
+                                    <StackPanel x:Name="Step1InfoText">
+                                        <StackPanel.Style>
+                                            <Style TargetType="StackPanel">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding CurrentStepIndex, Converter={StaticResource EqualityToBoolConverter}, ConverterParameter=1}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </StackPanel.Style>
+                                        <TextBlock Text="Step 1: Authentication" Foreground="#D4FF32" FontWeight="Bold" FontSize="13" Margin="0,0,0,6"/>
+                                        <TextBlock Text="Click 'Connect with Figma' to open your browser. Log into your Figma account and authorize the application to generate a secure OAuth session token." Foreground="#E0E0E0" FontSize="12" TextWrapping="Wrap" LineHeight="17"/>
+                                    </StackPanel>
+
+                                    <!-- Step 2 Instructions (Config) -->
+                                    <StackPanel x:Name="Step2InfoText">
+                                        <StackPanel.Style>
+                                            <Style TargetType="StackPanel">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding CurrentStepIndex, Converter={StaticResource EqualityToBoolConverter}, ConverterParameter=2}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </StackPanel.Style>
+                                        <TextBlock Text="Step 2: Target Configuration" Foreground="#D4FF32" FontWeight="Bold" FontSize="13" Margin="0,0,0,6"/>
+                                        <TextBlock Text="Paste the full URL of your Figma design file. Then, select the exact local directory in your Unity project where the UI assets should be generated." Foreground="#E0E0E0" FontSize="12" TextWrapping="Wrap" LineHeight="17"/>
+                                    </StackPanel>
+
+                                    <!-- Step 3 Instructions (Sync) -->
+                                    <StackPanel x:Name="Step3InfoText">
+                                        <StackPanel.Style>
+                                            <Style TargetType="StackPanel">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding CurrentStepIndex, Converter={StaticResource EqualityToBoolConverter}, ConverterParameter=3}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </StackPanel.Style>
+                                        <TextBlock Text="Step 3: Sync Pipeline" Foreground="#D4FF32" FontWeight="Bold" FontSize="13" Margin="0,0,0,6"/>
+                                        <TextBlock Text="Execute the transformation. The pipeline will parse your Figma nodes and convert them into Unity UXML and USS files. Monitor the terminal below for live logs." Foreground="#E0E0E0" FontSize="12" TextWrapping="Wrap" LineHeight="17"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </Popup>
+                    </Grid>
+
+                    <!-- Circular Settings Button -->
+                    <Button Width="40" Height="40" 
+                            Command="{Binding ToggleSettingsCommand}"
+                            ToolTip="Settings &amp; Preferences"
+                            HorizontalAlignment="Center">
+                        <TextBlock Text="⚙" FontSize="16" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource SidebarCircleButtonStyle}">
+                                <Setter Property="Width" Value="40"/>
+                                <Setter Property="Height" Value="40"/>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </StackPanel>
             </Grid>
         </Border>
 
@@ -187,7 +253,7 @@
                         <TextBlock Text="UnityUI Transformer" Foreground="#FFFFFF" FontWeight="Bold" FontSize="17" VerticalAlignment="Center"/>
                     </StackPanel>
 
-                    <!-- Connection Status Badge & User Avatar -->
+                    <!-- Connection Status Badge & User Profile Header -->
                     <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" VerticalAlignment="Center">
                         <!-- Disconnected Status Pill -->
                         <Border Visibility="{Binding IsConnected, Converter={StaticResource InverseBoolToVisConverter}}"
@@ -207,21 +273,32 @@
                             </StackPanel>
                         </Border>
 
-                        <!-- Circular User Avatar with Neon Accent Mask -->
-                        <Border Visibility="{Binding IsConnected, Converter={StaticResource BoolToVisConverter}}" 
-                                Margin="10,0,0,0" Width="30" Height="30" CornerRadius="15" BorderBrush="#D4FF32" BorderThickness="1.5" VerticalAlignment="Center">
-                            <Ellipse Width="27" Height="27">
-                                <Ellipse.Fill>
-                                    <ImageBrush ImageSource="{Binding AvatarUrl}" Stretch="UniformToFill"/>
-                                </Ellipse.Fill>
-                            </Ellipse>
-                        </Border>
+                        <!-- Header User Name & Live Avatar -->
+                        <StackPanel Visibility="{Binding IsConnected, Converter={StaticResource BoolToVisConverter}}" 
+                                    Orientation="Horizontal" VerticalAlignment="Center" Margin="14,0,0,0">
+                            <TextBlock Text="{Binding ConnectedUser}" Foreground="#E0E0E0" FontSize="12.5" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <Border Width="32" Height="32" CornerRadius="16" BorderBrush="#D4FF32" BorderThickness="1.5" VerticalAlignment="Center" ToolTip="{Binding ConnectedUser}">
+                                <Ellipse Width="29" Height="29">
+                                    <Ellipse.Fill>
+                                        <ImageBrush ImageSource="{Binding UserAvatarSource, FallbackValue={StaticResource DefaultAvatar}, TargetNullValue={StaticResource DefaultAvatar}}" Stretch="UniformToFill"/>
+                                    </Ellipse.Fill>
+                                </Ellipse>
+                            </Border>
+                        </StackPanel>
                     </StackPanel>
                 </Grid>
             </Border>
 
             <!-- Main Content Area Hosting Active Screen -->
             <ContentControl Grid.Row="1" Content="{Binding CurrentView}" Focusable="False"/>
+        </Grid>
+
+        <!-- ================= 3. SETTINGS MODAL OVERLAY ================= -->
+        <Grid Grid.ColumnSpan="2" 
+              Visibility="{Binding IsSettingsOpen, Converter={StaticResource BoolToVisConverter}}" 
+              Background="#99000000" 
+              Panel.ZIndex="999">
+            <views:SettingsView HorizontalAlignment="Center" VerticalAlignment="Center"/>
         </Grid>
     </Grid>
 </Window>

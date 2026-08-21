@@ -2,8 +2,7 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:UnityUITransformer.App"
-             xmlns:converters="clr-namespace:UnityUITransformer.App.Converters"
-             StartupUri="MainWindow.xaml">
+             xmlns:converters="clr-namespace:UnityUITransformer.App.Converters">
     <Application.Resources>
         <ResourceDictionary>
             <!-- Converters -->
@@ -184,40 +183,85 @@
                 </Setter>
             </Style>
 
-            <!-- High-Contrast Sidebar Navigation Rail Button Style -->
-            <Style x:Key="SidebarRailButtonStyle" TargetType="Button">
-                <Setter Property="Background" Value="#1F2024"/>
+            <!-- Sleek High-Contrast Circular Step Button Style (48x48 Circle) -->
+            <Style x:Key="SidebarCircleButtonStyle" TargetType="Button">
+                <Setter Property="Width" Value="48"/>
+                <Setter Property="Height" Value="48"/>
                 <Setter Property="Foreground" Value="#FFFFFF"/>
-                <Setter Property="BorderBrush" Value="#333333"/>
-                <Setter Property="BorderThickness" Value="1"/>
                 <Setter Property="FontFamily" Value="Segoe UI Variable, Inter, sans-serif"/>
                 <Setter Property="FontWeight" Value="Bold"/>
-                <Setter Property="FontSize" Value="13"/>
-                <Setter Property="HorizontalContentAlignment" Value="Left"/>
-                <Setter Property="Padding" Value="16,12"/>
-                <Setter Property="Height" Value="46"/>
+                <Setter Property="FontSize" Value="14"/>
                 <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+                <Setter Property="RenderTransform">
+                    <Setter.Value>
+                        <ScaleTransform ScaleX="1.0" ScaleY="1.0"/>
+                    </Setter.Value>
+                </Setter>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="Button">
                             <Border x:Name="border"
-                                    Background="{TemplateBinding Background}"
-                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                    BorderThickness="{TemplateBinding BorderThickness}"
-                                    CornerRadius="12"
+                                    Background="#2A2B30"
+                                    CornerRadius="24"
                                     SnapsToDevicePixels="True">
                                 <ContentPresenter TextElement.Foreground="{TemplateBinding Foreground}" 
-                                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
-                                                  VerticalAlignment="Center" 
-                                                  Margin="{TemplateBinding Padding}"/>
+                                                  HorizontalAlignment="Center" 
+                                                  VerticalAlignment="Center"/>
                             </Border>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="border" Property="Background" Value="#2D2F36"/>
+                                    <Setter TargetName="border" Property="Background" Value="#3F4045"/>
+                                    <Setter Property="RenderTransform">
+                                        <Setter.Value>
+                                            <ScaleTransform ScaleX="1.08" ScaleY="1.08"/>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter Property="RenderTransform">
+                                        <Setter.Value>
+                                            <ScaleTransform ScaleX="0.95" ScaleY="0.95"/>
+                                        </Setter.Value>
+                                    </Setter>
                                 </Trigger>
                                 <Trigger Property="IsEnabled" Value="False">
                                     <Setter TargetName="border" Property="Opacity" Value="0.35"/>
                                     <Setter Property="Cursor" Value="No"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Small Info 'i' ToggleButton Style -->
+            <Style x:Key="InfoToggleButtonStyle" TargetType="ToggleButton">
+                <Setter Property="Background" Value="#1F2024"/>
+                <Setter Property="Foreground" Value="#9E9E9E"/>
+                <Setter Property="BorderBrush" Value="#3F3F46"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ToggleButton">
+                            <Border x:Name="border"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="9"
+                                    SnapsToDevicePixels="True">
+                                <TextBlock Text="i" FontFamily="Georgia, serif" FontStyle="Italic" FontWeight="Bold" FontSize="11" Foreground="{TemplateBinding Foreground}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-1,0,0"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="border" Property="BorderBrush" Value="#D4FF32"/>
+                                    <Setter Property="Foreground" Value="#D4FF32"/>
+                                </Trigger>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter TargetName="border" Property="Background" Value="#18181A"/>
+                                    <Setter TargetName="border" Property="BorderBrush" Value="#D4FF32"/>
+                                    <Setter Property="Foreground" Value="#D4FF32"/>
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>

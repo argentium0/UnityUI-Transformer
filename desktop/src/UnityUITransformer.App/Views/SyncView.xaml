@@ -32,15 +32,16 @@
 
     <Grid Margin="24">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/> <!-- Top Action Card -->
-            <RowDefinition Height="*"/>    <!-- Expanded Dark Terminal Console Block -->
+            <RowDefinition Height="Auto"/> <!-- Top Action Header Card -->
+            <RowDefinition Height="*"/>    <!-- Terminal & Completion Feedback Area -->
+            <RowDefinition Height="Auto"/> <!-- Post-Sync Completion Actions -->
         </Grid.RowDefinitions>
 
         <!-- TOP ACTION CARD (Execute Sync Engine) -->
         <Border Grid.Row="0" 
                 Background="#25262B" 
-                CornerRadius="24" 
-                Padding="32,28" Margin="0,0,0,24">
+                CornerRadius="20" 
+                Padding="28,22" Margin="0,0,0,16">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -48,13 +49,19 @@
                 </Grid.RowDefinitions>
 
                 <!-- Action Card Header -->
-                <Grid Grid.Row="0" Margin="0,0,0,16">
+                <Grid Grid.Row="0" Margin="0,0,0,12">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <Border Width="32" Height="32" CornerRadius="16" Background="#D4FF32" Margin="0,0,12,0">
                             <TextBlock Text="3" Foreground="#18181A" FontWeight="Bold" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <TextBlock Text="Execute Translation Engine" Foreground="#FFFFFF" FontWeight="Bold" FontSize="18"/>
                     </StackPanel>
+
+                    <!-- Active Status Pill -->
+                    <Border Visibility="{Binding IsSyncing, Converter={StaticResource BoolToVisConverter}}"
+                            Background="#1F2414" BorderBrush="#D4FF32" BorderThickness="1" CornerRadius="12" Padding="10,4" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <TextBlock Text="⚡ Transformation Active" Foreground="#D4FF32" FontWeight="SemiBold" FontSize="11"/>
+                    </Border>
                 </Grid>
 
                 <!-- Action & Progress Region -->
@@ -65,13 +72,13 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                        <TextBlock Text="Compile design hierarchy into native UI Toolkit UXML visual trees, USS stylesheets, and design token ScriptableObjects." 
-                                   Foreground="#9E9E9E" FontSize="13" TextWrapping="Wrap" LineHeight="20"/>
+                        <TextBlock Text="Compile design hierarchy into native UI Toolkit UXML visual trees &amp; USS stylesheets." 
+                                   Foreground="#9E9E9E" FontSize="12.5" TextWrapping="Wrap"/>
 
                         <!-- Active Progress Bar during Sync -->
-                        <StackPanel Visibility="{Binding IsSyncing, Converter={StaticResource BoolToVisConverter}}" Margin="0,16,0,0">
-                            <ProgressBar Height="6" Value="{Binding SyncProgress}" Maximum="100" Background="#1F2024" Foreground="#D4FF32" BorderThickness="0"/>
-                            <TextBlock Text="{Binding SyncStatusText}" Foreground="#D4FF32" FontSize="12" FontFamily="Cascadia Code, Consolas" Margin="0,6,0,0"/>
+                        <StackPanel Visibility="{Binding IsSyncing, Converter={StaticResource BoolToVisConverter}}" Margin="0,12,0,0">
+                            <ProgressBar Height="5" Value="{Binding SyncProgress, Mode=OneWay}" Maximum="100" Background="#1F2024" Foreground="#D4FF32" BorderThickness="0"/>
+                            <TextBlock Text="{Binding SyncStatusText}" Foreground="#D4FF32" FontSize="11.5" FontFamily="Cascadia Code, Consolas" Margin="0,4,0,0"/>
                         </StackPanel>
                     </StackPanel>
 
@@ -80,16 +87,16 @@
                             Command="{Binding SyncCommand}" 
                             Style="{StaticResource ProMaxPrimaryButtonStyle}" 
                             ToolTip="Run transformation pipeline and emit visual assets into target Unity directory"
-                            Padding="28,14" Margin="24,0,0,0">
+                            Padding="24,12" Margin="20,0,0,0">
                         <Grid>
                             <!-- Idle State -->
                             <StackPanel Orientation="Horizontal" Visibility="{Binding IsSyncing, Converter={StaticResource InverseBoolToVisConverter}}">
-                                <TextBlock Text="⚡ Sync UI to Unity" FontWeight="Bold" FontSize="14"/>
+                                <TextBlock Text="⚡ Run Transformation" FontWeight="Bold" FontSize="13"/>
                             </StackPanel>
 
                             <!-- Active Loading State -->
                             <StackPanel Orientation="Horizontal" Visibility="{Binding IsSyncing, Converter={StaticResource BoolToVisConverter}}">
-                                <TextBlock Text="⏳ Syncing Pipeline..." Foreground="#FFFFFF" FontWeight="Bold" FontSize="14"/>
+                                <TextBlock Text="⏳ Syncing Pipeline..." Foreground="#FFFFFF" FontWeight="Bold" FontSize="13"/>
                             </StackPanel>
                         </Grid>
                     </Button>
@@ -97,55 +104,119 @@
             </Grid>
         </Border>
 
-        <!-- PITCH CHARCOAL TERMINAL CONSOLE BLOCK -->
-        <Border Grid.Row="1" 
-                Background="#141416" 
-                CornerRadius="16">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/> <!-- Console Toolbar -->
-                    <RowDefinition Height="*"/>    <!-- Scrollable Log Stream -->
-                </Grid.RowDefinitions>
+        <!-- CENTRAL AREA: COMPLETION FEEDBACK BANNER & TERMINAL CONSOLE -->
+        <Grid Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/> <!-- Completion Feedback Banner -->
+                <RowDefinition Height="*"/>    <!-- Monospace Terminal Window -->
+            </Grid.RowDefinitions>
 
-                <!-- Terminal Action Bar -->
-                <Border Grid.Row="0" Background="#18181C" BorderBrush="#25262B" BorderThickness="0,0,0,1" Padding="18,12" CornerRadius="16,16,0,0">
-                    <Grid>
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <Ellipse Width="8" Height="8" Fill="#10B981" Margin="0,0,10,0"/>
-                            <TextBlock Text="System Log Stream" Foreground="#FFFFFF" FontWeight="Bold" FontSize="13"/>
-                            <Border Background="#1F2024" BorderBrush="#3F3F46" BorderThickness="1" CornerRadius="4" Padding="7,2" Margin="12,0,0,0">
-                                <TextBlock Text="ShimLogSink" Foreground="#D4FF32" FontSize="10.5" FontFamily="Cascadia Code, Consolas"/>
-                            </Border>
-                        </StackPanel>
+            <!-- PROMINENT TRANSFORMATION COMPLETE FEEDBACK CARD -->
+            <Border Grid.Row="0"
+                    Visibility="{Binding IsSyncComplete, Converter={StaticResource BoolToVisConverter}}"
+                    Background="#192A1F" BorderBrush="#D4FF32" BorderThickness="1.5" CornerRadius="14" Padding="18,14" Margin="0,0,0,14">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                            <CheckBox IsChecked="{Binding AutoScrollEnabled}" Style="{StaticResource ProMaxCheckBoxStyle}" Content="Auto-Scroll" ToolTip="Automatically scroll to latest log events" Margin="0,0,16,0"/>
-                            <Button Command="{Binding ClearLogsCommand}" Content="Clear Logs" ToolTip="Clear terminal console entries" Style="{StaticResource ProMaxSecondaryButtonStyle}" Padding="14,6" FontSize="11.5"/>
-                        </StackPanel>
-                    </Grid>
-                </Border>
+                    <!-- Success Badge -->
+                    <Border Grid.Column="0" Width="36" Height="36" CornerRadius="18" Background="#D4FF32" Margin="0,0,14,0">
+                        <TextBlock Text="✓" Foreground="#18181A" FontWeight="Bold" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
 
-                <!-- Log Stream ScrollViewer -->
-                <ScrollViewer Grid.Row="1" x:Name="TerminalScrollViewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="18">
-                    <ItemsControl ItemsSource="{Binding LogEntries}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Grid Margin="0,3">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
+                    <!-- Feedback Text -->
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="Transformation Complete!" Foreground="#D4FF32" FontWeight="Bold" FontSize="15"/>
+                        <TextBlock Text="UXML layout skeleton &amp; USS stylesheets exported to your Unity target directory." Foreground="#E5E7EB" FontSize="12" Margin="0,2,0,0"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
 
-                                    <TextBlock Grid.Column="0" Text="{Binding FormattedTimestamp, StringFormat='[{0}]'}" Foreground="#6E6E6E" FontFamily="Cascadia Code, Consolas" FontSize="12" Margin="0,0,10,0"/>
-                                    <TextBlock Grid.Column="1" Text="{Binding Level, StringFormat='[{0}]'}" Foreground="{Binding Level, Converter={StaticResource LogLevelToBrushConverter}}" FontWeight="Bold" FontFamily="Cascadia Code, Consolas" FontSize="12" Margin="0,0,10,0"/>
-                                    <TextBlock Grid.Column="2" Text="{Binding Message}" Foreground="{Binding Level, Converter={StaticResource LogLevelToBrushConverter}}" FontFamily="Cascadia Code, Consolas" FontSize="12" TextWrapping="Wrap"/>
-                                </Grid>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </ScrollViewer>
-            </Grid>
+            <!-- DEEP BLACK MONOSPACE TERMINAL CONSOLE (#0D0D0F, CornerRadius=12, Border=#333333) -->
+            <Border Grid.Row="1" 
+                    Background="#0D0D0F" 
+                    BorderBrush="#333333" 
+                    BorderThickness="1" 
+                    CornerRadius="12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/> <!-- Console Bar -->
+                        <RowDefinition Height="*"/>    <!-- Scrollable Monospace Logs -->
+                    </Grid.RowDefinitions>
+
+                    <!-- Terminal Header Bar -->
+                    <Border Grid.Row="0" Background="#141417" BorderBrush="#25262B" BorderThickness="0,0,0,1" Padding="16,10" CornerRadius="12,12,0,0">
+                        <Grid>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Ellipse Width="7" Height="7" Fill="#D4FF32" Margin="0,0,8,0"/>
+                                <TextBlock Text="Live Output Console" Foreground="#FFFFFF" FontWeight="Bold" FontSize="12.5"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <Button Command="{Binding ClearLogsCommand}" Content="Clear Terminal" ToolTip="Clear terminal logs" Style="{StaticResource ProMaxSecondaryButtonStyle}" Padding="12,4" FontSize="11"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Monospace Log Stream ScrollViewer -->
+                    <ScrollViewer Grid.Row="1" x:Name="TerminalScrollViewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="16">
+                        <ItemsControl ItemsSource="{Binding LogEntries}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,3">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Monospace Timestamp -->
+                                        <TextBlock Grid.Column="0" Text="{Binding FormattedTimestamp, StringFormat='[{0}] '}" Foreground="#55555C" FontFamily="Cascadia Code, Consolas, Courier New" FontSize="11.5" Margin="0,0,6,0"/>
+
+                                        <!-- Monospace Log Message with Color Syntax -->
+                                        <TextBlock Grid.Column="1" Text="{Binding Message}" FontFamily="Cascadia Code, Consolas, Courier New" FontSize="11.5" TextWrapping="Wrap">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="#A0A0A5"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Level}" Value="Warning">
+                                                            <Setter Property="Foreground" Value="#F59E0B"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Level}" Value="Error">
+                                                            <Setter Property="Foreground" Value="#EF4444"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- POST-SYNC COMPLETION ACTIONS BAR -->
+        <Border Grid.Row="2" Margin="0,16,0,0" Visibility="{Binding IsSyncing, Converter={StaticResource InverseBoolToVisConverter}}">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                
+                <!-- BUTTON 1: Open Target Folder (Secondary Dark Gray #25262B with White Text) -->
+                <Button Command="{Binding OpenFolderCommand}" 
+                        Content="📁 Open Target Folder" 
+                        ToolTip="Open local directory in Windows File Explorer"
+                        Style="{StaticResource ProMaxSecondaryButtonStyle}" 
+                        Padding="20,10" FontSize="13" Margin="0,0,12,0"/>
+
+                <!-- BUTTON 2: Return to Config (Primary Neon Lime Green #D4FF32 with Black Text) -->
+                <Button Command="{Binding ResetCommand}" 
+                        Content="↺ Return to Config" 
+                        ToolTip="Reset pipeline state and return to Step 2 Target Configuration"
+                        Style="{StaticResource ProMaxPrimaryButtonStyle}" 
+                        Padding="22,10" FontSize="13"/>
+            </StackPanel>
         </Border>
     </Grid>
 </UserControl>

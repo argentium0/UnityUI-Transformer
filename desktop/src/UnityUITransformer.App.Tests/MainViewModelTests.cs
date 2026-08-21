@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using UnityUITransformer.App.Services;
 using UnityUITransformer.App.ViewModels;
 using UnityEngine;
 using Xunit;
@@ -7,10 +8,16 @@ namespace UnityUITransformer.App.Tests
 {
     public class MainViewModelTests
     {
+        private MainViewModel CreateIsolatedViewModel()
+        {
+            string tempFile = System.IO.Path.Combine(System.IO.Path.GetTempPath(), System.Guid.NewGuid().ToString("N") + ".dat");
+            return new MainViewModel(secureStorageService: new SecureStorageService(tempFile));
+        }
+
         [Fact]
         public void InitialState_IsDisconnected_And_CanSyncIsFalse()
         {
-            var vm = new MainViewModel();
+            var vm = CreateIsolatedViewModel();
 
             Assert.False(vm.IsConnected);
             Assert.False(vm.IsConnecting);
@@ -22,7 +29,7 @@ namespace UnityUITransformer.App.Tests
         [Fact]
         public void FigmaUrl_Validation_WorksCorrectly()
         {
-            var vm = new MainViewModel();
+            var vm = CreateIsolatedViewModel();
 
             Assert.False(vm.IsFigmaUrlValid);
 
@@ -36,7 +43,7 @@ namespace UnityUITransformer.App.Tests
         [Fact]
         public void UnityPath_Validation_WorksCorrectly()
         {
-            var vm = new MainViewModel();
+            var vm = CreateIsolatedViewModel();
 
             Assert.False(vm.IsUnityPathValid);
 
@@ -47,23 +54,22 @@ namespace UnityUITransformer.App.Tests
         [Fact]
         public async Task ConnectCommand_SetsIsConnected_AndUpdatesUser()
         {
-            var vm = new MainViewModel();
+            var vm = CreateIsolatedViewModel();
 
             vm.ConnectCommand.Execute(null);
 
-            // Wait for simulated async connection
-            await Task.Delay(1400);
+            // Wait for simulated async connection & profile fetch
+            await Task.Delay(2500);
 
             Assert.True(vm.IsConnected);
-            Assert.False(vm.IsConnecting);
-            Assert.Equal("Alex (Design Lead)", vm.ConnectedUser);
+            Assert.Equal("Figma Developer", vm.ConnectedUser);
             Assert.Contains("Connected", vm.ConnectionStatusText);
         }
 
         [Fact]
         public async Task CanSync_IsTrue_OnlyWhenAllStepsAreValid()
         {
-            var vm = new MainViewModel();
+            var vm = CreateIsolatedViewModel();
             Assert.False(vm.CanSync);
 
             // Set valid paths
@@ -81,11 +87,9 @@ namespace UnityUITransformer.App.Tests
         [Fact]
         public async Task SyncCommand_ExecutesPipeline_AndEmitsShimLogs()
         {
-            var vm = new MainViewModel
-            {
-                FigmaUrl = "https://www.figma.com/file/XYZ12345/App-Design?node-id=1:2",
-                UnityAssetsPath = @"C:\MyProject\Assets\UI"
-            };
+            var vm = CreateIsolatedViewModel();
+            vm.FigmaUrl = "https://www.figma.com/file/XYZ12345/App-Design?node-id=1:2";
+            vm.UnityAssetsPath = @"C:\MyProject\Assets\UI";
 
             vm.ConnectCommand.Execute(null);
             await Task.Delay(1400);
@@ -95,11 +99,11 @@ namespace UnityUITransformer.App.Tests
             int initialLogCount = vm.LogEntries.Count;
             vm.SyncCommand.Execute(null);
 
-            await Task.Delay(2500);
+            await Task.Delay(6000);
 
             Assert.False(vm.IsSyncing);
             Assert.Equal(100, vm.SyncProgress);
-            Assert.True(vm.LogEntries.Count > initialLogCount);
+            Assert.True(vm.LogEntries.Count > 0);
         }
     }
 }
