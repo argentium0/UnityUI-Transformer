@@ -53,7 +53,8 @@ namespace UnityUITransformer.App.Services
 
                 var signInOptions = new SignInOptions
                 {
-                    RedirectTo = "http://localhost:54321/callback"
+                    RedirectTo = "http://localhost:54321/callback",
+                    Scopes = "file_read"
                 };
 
                 // Trigger OAuth sign-in flow for Figma provider (Constants.Provider.Figma)

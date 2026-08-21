@@ -8,6 +8,7 @@
         xmlns:views="clr-namespace:UnityUITransformer.App.Views"
         mc:Ignorable="d"
         Title="UnityUI Transformer" 
+        Icon="pack://application:,,,/Assets/app_icon.ico"
         Width="980" Height="660"
         MinWidth="850" MinHeight="550"
         FontFamily="Segoe UI Variable, Inter, sans-serif"

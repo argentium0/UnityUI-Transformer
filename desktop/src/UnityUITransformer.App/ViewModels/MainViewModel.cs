@@ -696,7 +696,18 @@ Welcome to the **UnityUI Transformer**! This utility bridges Figma design frames
 
         private async Task ExecuteSyncAsync()
         {
-            if (!CanSync) return;
+            var session = _supabaseAuthService.Client?.Auth?.CurrentSession;
+            if (session == null || string.IsNullOrEmpty(session.AccessToken))
+            {
+                MessageBox.Show("Login Required: Please click 'Connect with Figma' to authenticate.", "Authentication Error");
+                return;
+            }
+
+            if (!CanSync) 
+            {
+                System.Diagnostics.Debug.WriteLine("[MainViewModel] Execution aborted: CanSync is false.");
+                return;
+            }
 
             IsSyncing = true;
             IsSyncComplete = false;

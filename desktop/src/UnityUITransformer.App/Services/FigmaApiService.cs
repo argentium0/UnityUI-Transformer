@@ -19,7 +19,7 @@ namespace UnityUITransformer.App.Services
         {
             _authService = authService ?? throw new ArgumentNullException(nameof(authService));
             _httpClient = httpClient ?? new HttpClient();
-            _httpClient.Timeout = TimeSpan.FromMilliseconds(500);
+            _httpClient.Timeout = TimeSpan.FromSeconds(30);
             if (_httpClient.BaseAddress == null)
             {
                 _httpClient.BaseAddress = new Uri("https://api.figma.com/v1/");
@@ -45,10 +45,7 @@ namespace UnityUITransformer.App.Services
             if (nodeMatch.Success)
             {
                 nodeId = Uri.UnescapeDataString(nodeMatch.Groups[1].Value);
-                if (!nodeId.Contains(":") && nodeId.Contains("-"))
-                {
-                    nodeId = nodeId.Replace("-", ":");
-                }
+                nodeId = nodeId.Replace("-", ":");
             }
 
             return (fileId, nodeId);
@@ -69,17 +66,26 @@ namespace UnityUITransformer.App.Services
                 ?? "figma_oauth_token_session";
 
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            request.Headers.TryAddWithoutValidation("X-Figma-Token", token);
 
             try
             {
                 using var response = await _httpClient.SendAsync(request);
                 response.EnsureSuccessStatusCode();
 
-                return await response.Content.ReadAsStringAsync();
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+                
+                System.Windows.MessageBox.Show($"DIAGNOSTIC: API Fetched {jsonResponse.Length} bytes.\n\nPreview:\n{jsonResponse.Substring(0, System.Math.Min(500, jsonResponse.Length))}");
+
+                System.Diagnostics.Debug.WriteLine("=== RAW FIGMA API NODE RESPONSE ===");
+                System.Diagnostics.Debug.WriteLine(jsonResponse.Length > 1000 ? jsonResponse.Substring(0, 1000) + "..." : jsonResponse);
+                
+                Console.WriteLine($"[FigmaApiService] Fetched node payload. Length: {jsonResponse.Length} bytes");
+
+                return jsonResponse;
             }
             catch (Exception ex)
             {
+                System.Windows.MessageBox.Show($"DIAGNOSTIC EXCEPTION in GetFigmaNodeAsync:\n{ex.Message}\n\nStack:\n{ex.StackTrace}");
                 // Return structured fallback JSON if server returns non-200 or in offline test mode
                 return $"{{\"name\":\"Simulated Figma Node ({fileId})\",\"nodeId\":\"{nodeId}\",\"status\":\"OK\",\"message\":\"{ex.Message}\"}}";
             }
@@ -96,7 +102,6 @@ namespace UnityUITransformer.App.Services
             {
                 using var request = new HttpRequestMessage(HttpMethod.Get, "me");
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-                request.Headers.TryAddWithoutValidation("X-Figma-Token", token);
 
                 using var response = await _httpClient.SendAsync(request);
                 if (response.IsSuccessStatusCode)
@@ -138,6 +143,30 @@ namespace UnityUITransformer.App.Services
             };
         }
 
+        private FigmaNode? ExtractFigmaNode(string json, string? nodeId, JsonSerializerOptions options)
+        {
+            using var document = JsonDocument.Parse(json);
+            var rootElement = document.RootElement;
+
+            if (!string.IsNullOrEmpty(nodeId) && rootElement.TryGetProperty("nodes", out var nodesElement))
+            {
+                if (nodesElement.TryGetProperty(nodeId, out var nodeContainerElement))
+                {
+                    if (nodeContainerElement.TryGetProperty("document", out var docElement))
+                    {
+                        return JsonSerializer.Deserialize<FigmaNode>(docElement.GetRawText(), options);
+                    }
+                }
+            }
+
+            if (rootElement.TryGetProperty("document", out var rootDocElement))
+            {
+                return JsonSerializer.Deserialize<FigmaNode>(rootDocElement.GetRawText(), options);
+            }
+
+            return null;
+        }
+
         public async Task<FigmaNode> GetFigmaNodeModelAsync(string figmaUrl)
         {
             string json = await GetFigmaNodeAsync(figmaUrl);
@@ -151,13 +180,12 @@ namespace UnityUITransformer.App.Services
                     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
                 };
 
-                var response = JsonSerializer.Deserialize<FigmaNodeResponse>(json, options);
-
-                var root = response?.GetRootNode();
+                var root = ExtractFigmaNode(json, nodeId, options);
                 if (root != null) return root;
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine($"[FigmaApiService] Failed to extract node: {ex.Message}");
                 // Fallback to simulated node hierarchy for offline local dev/testing
             }
 
