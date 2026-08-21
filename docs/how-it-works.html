@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How it Works — UnityUI Transformer Pipeline</title>
+  <meta name="description" content="Step-by-step interactive workflow of UnityUI Transformer: Figma Node token parsing, OAuth PKCE DPAPI security, and UXML/USS compilation.">
+
+  <!-- Google Fonts: Sora (400, 500, 700) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- GSAP Animation Engine & ScrollTrigger Plugin -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar" id="navbar">
+    <div class="container nav-container">
+      <a href="index.html" class="brand-logo">
+        <div class="logo-badge">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#d4ff33" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+          </svg>
+        </div>
+        <span>UnityUI <span class="gradient-headline">Transformer</span></span>
+      </a>
+
+      <a href="index.html" class="btn-secondary">
+        <span>← Back to Home</span>
+      </a>
+    </div>
+  </nav>
+
+  <!-- Header Section -->
+  <header class="page-header">
+    <div class="container text-center">
+      <div class="pill-tag gsap-step-header">
+        <span>⚡ Interactive Compilation Pipeline</span>
+      </div>
+      <h1 class="page-title gsap-step-header">
+        How <span class="gradient-headline">UnityUI Transformer</span> Works
+      </h1>
+      <p class="page-subtitle gsap-step-header">
+        A 3-step compilation flow converting Figma design frames into native Unity UI Toolkit UXML & USS code.
+      </p>
+    </div>
+  </header>
+
+  <!-- Step-by-Step Interactive Timeline -->
+  <section class="timeline-section">
+    <div class="container">
+      <div class="timeline-wrapper">
+
+        <!-- Step 1: The Design Token -->
+        <article class="step-card gsap-timeline-step" id="step-1">
+          <div class="step-badge">Step 01</div>
+          <div class="step-grid">
+            <div class="step-info">
+              <h2>The Design Token</h2>
+              <p>
+                Paste your Figma design frame URL. The engine validates the strict <code>node-id=...</code> query parameter to target the exact UI component, preventing raw file link execution errors.
+              </p>
+              <ul class="step-bullets">
+                <li>Strict URL node parameter validation guardrails</li>
+                <li>Direct Figma REST API node tree retrieval</li>
+                <li>Auto-Layout flex direction & bounding box extraction</li>
+              </ul>
+            </div>
+            <div class="step-visual">
+              <div class="code-card">
+                <div class="code-header">
+                  <span class="dot red"></span>
+                  <span class="dot yellow"></span>
+                  <span class="dot green"></span>
+                  <span class="code-title">Figma Node Inspector</span>
+                </div>
+                <div class="code-body">
+                  <span class="token-comment">// Input Figma URL Parameter</span><br>
+                  <span class="token-url">https://figma.com/design/Abc123Xyz/UI?node-id=102:405</span><br><br>
+                  <span class="token-key">"id"</span>: <span class="token-val">"102:405"</span>,<br>
+                  <span class="token-key">"name"</span>: <span class="token-val">"HUD_Inventory_Frame"</span>,<br>
+                  <span class="token-key">"layoutMode"</span>: <span class="token-val">"VERTICAL"</span>,<br>
+                  <span class="token-key">"itemSpacing"</span>: <span class="token-val">12</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- Step 2: Secure Handshake -->
+        <article class="step-card gsap-timeline-step" id="step-2">
+          <div class="step-badge">Step 02</div>
+          <div class="step-grid">
+            <div class="step-info">
+              <h2>Secure Handshake</h2>
+              <p>
+                Authenticate seamlessly via official Figma OAuth 2.0 PKCE flow. Access tokens are encrypted locally using Windows DPAPI (<code>ProtectedData</code>), ensuring zero cloud footprint.
+              </p>
+              <ul class="step-bullets">
+                <li>Local DPAPI Windows User-Scope Encryption</li>
+                <li>Automatic session persistence & hard disconnect purge</li>
+                <li>Live Figma profile handle & avatar synchronization</li>
+              </ul>
+            </div>
+            <div class="step-visual">
+              <div class="code-card">
+                <div class="code-header">
+                  <span class="dot red"></span>
+                  <span class="dot yellow"></span>
+                  <span class="dot green"></span>
+                  <span class="code-title">Windows DPAPI Vault (session.dat)</span>
+                </div>
+                <div class="code-body">
+                  <span class="token-comment">// DPAPI Local Encryption Engine</span><br>
+                  <span class="token-keyword">byte</span>[] plainBytes = Encoding.UTF8.GetBytes(token);<br>
+                  <span class="token-keyword">byte</span>[] encrypted = ProtectedData.Protect(<br>
+                  &nbsp;&nbsp;plainBytes, Entropy, DataProtectionScope.CurrentUser<br>
+                  );<br><br>
+                  <span class="token-green">✓ Secure Local Session Initialized</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- Step 3: The Engine -->
+        <article class="step-card gsap-timeline-step" id="step-3">
+          <div class="step-badge">Step 03</div>
+          <div class="step-grid">
+            <div class="step-info">
+              <h2>The Engine</h2>
+              <p>
+                The UxmlGenerator & UssGenerator engines translate Figma Auto-Layout flex direction, padding, gap, and text styles into clean, production-ready Unity UI Toolkit <code>.uxml</code> and <code>.uss</code> files.
+              </p>
+              <ul class="step-bullets">
+                <li>Automated UXML tree node hierarchy generation</li>
+                <li>USS flexbox styling rules with custom class names</li>
+                <li>Live streaming log terminal output</li>
+              </ul>
+            </div>
+            <div class="step-visual">
+              <div class="code-card">
+                <div class="code-header">
+                  <span class="dot red"></span>
+                  <span class="dot yellow"></span>
+                  <span class="dot green"></span>
+                  <span class="code-title">Generated Unity UI Toolkit Assets</span>
+                </div>
+                <div class="code-body">
+                  <span class="token-tag">&lt;ui:UXML</span> <span class="token-attr">xmlns:ui=</span><span class="token-val">"UnityEngine.UIElements"</span><span class="token-tag">&gt;</span><br>
+                  &nbsp;&nbsp;<span class="token-tag">&lt;ui:VisualElement</span> <span class="token-attr">class=</span><span class="token-val">"hud-inventory-frame"</span><span class="token-tag">/&gt;</span><br>
+                  <span class="token-tag">&lt;/ui:UXML&gt;</span><br><br>
+                  <span class="token-comment">/* Generated USS Flexbox Styles */</span><br>
+                  <span class="token-class">.hud-inventory-frame</span> {<br>
+                  &nbsp;&nbsp;<span class="token-prop">flex-direction</span>: column;<br>
+                  &nbsp;&nbsp;<span class="token-prop">row-gap</span>: <span class="token-num">12px</span>;<br>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Final Call To Action -->
+  <section class="final-cta-section" id="download-cta">
+    <div class="container">
+      <div class="cta-card gsap-cta-card">
+        <h2 class="cta-title">Ready to Automate Your <span class="gradient-headline">Unity UI Pipeline?</span></h2>
+        <p class="cta-subtitle">
+          Download the standalone single-file Windows executable and start transforming Figma frames into production-ready UI Toolkit assets today.
+        </p>
+        <div class="cta-buttons">
+          <a href="https://github.com/argentium0/UnityUI-Transformer/releases/latest/download/UnityUITransformer.App.exe" class="btn-primary">
+            <span>Download for Windows</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <a href="index.html" class="btn-secondary">
+            <span>← Back to Home</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <p>&copy; 2026 UnityUI Transformer. Built with GSAP & Modern Web Architecture.</p>
+    </div>
+  </footer>
+
+  <!-- GSAP Animation Engine for how-it-works.html -->
+  <script src="how-it-works.js"></script>
+</body>
+</html>
