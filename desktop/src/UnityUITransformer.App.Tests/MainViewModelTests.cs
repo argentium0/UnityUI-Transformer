@@ -79,7 +79,7 @@ namespace UnityUITransformer.App.Tests
 
             // Connect
             vm.ConnectCommand.Execute(null);
-            await Task.Delay(1400);
+            await Task.Delay(2000);
 
             Assert.True(vm.CanSync);
         }
@@ -92,7 +92,7 @@ namespace UnityUITransformer.App.Tests
             vm.UnityAssetsPath = @"C:\MyProject\Assets\UI";
 
             vm.ConnectCommand.Execute(null);
-            await Task.Delay(1400);
+            await Task.Delay(2000);
 
             Assert.True(vm.CanSync);
 

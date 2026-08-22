@@ -70,9 +70,20 @@ namespace UnityUITransformer.App.ViewModels
         public bool CanNavigateToConfig => IsConnected;
         public bool CanNavigateToSync => IsConnected && IsStep2Completed;
 
+        public string ProviderToken
+        {
+            get
+            {
+                var savedToken = _secureStorageService.LoadSessionToken();
+                if (!string.IsNullOrWhiteSpace(savedToken)) return savedToken;
+                var session = _supabaseAuthService.Client?.Auth?.CurrentSession;
+                return session?.AccessToken ?? string.Empty;
+            }
+        }
+
         public bool IsConnected
         {
-            get => _isConnected;
+            get => _isConnected && !string.IsNullOrWhiteSpace(ProviderToken);
             set
             {
                 if (SetProperty(ref _isConnected, value))
@@ -376,7 +387,7 @@ namespace UnityUITransformer.App.ViewModels
             SecureStorageService? secureStorageService = null)
         {
             _supabaseAuthService = supabaseAuthService ?? new SupabaseAuthService();
-            _figmaApiService = figmaApiService ?? new FigmaApiService(_supabaseAuthService);
+            _figmaApiService = figmaApiService ?? new FigmaApiService();
             _uxmlGenerator = uxmlGenerator ?? new UxmlGenerator();
             _ussGenerator = ussGenerator ?? new UssGenerator();
             _exportService = exportService ?? new ExportService();
@@ -491,28 +502,43 @@ namespace UnityUITransformer.App.ViewModels
 
                 if (result.IsSuccess)
                 {
-                    ConnectedUser = result.UserName;
-                    if (!string.IsNullOrEmpty(result.AvatarUrl))
-                    {
-                        AvatarUrl = result.AvatarUrl;
-                    }
-                    IsConnected = true;
+                    string providerToken = !string.IsNullOrWhiteSpace(result.ProviderToken) 
+                        ? result.ProviderToken 
+                        : result.AccessToken;
 
-                    if (!string.IsNullOrEmpty(result.AccessToken))
+                    if (!string.IsNullOrWhiteSpace(providerToken))
                     {
-                        _secureStorageService.SaveSessionToken(result.AccessToken);
+                        _secureStorageService.SaveSessionToken(providerToken);
+
+                        string connectedUser = result.UserName;
+                        string avatarUrl = result.AvatarUrl;
 
                         // Query Figma REST API /v1/me for user handle and profile image URL
-                        var (handle, imgUrl, _) = await _figmaApiService.GetFigmaUserProfileAsync(result.AccessToken);
-                        if (!string.IsNullOrEmpty(handle)) ConnectedUser = handle;
-                        if (!string.IsNullOrEmpty(imgUrl)) AvatarUrl = imgUrl;
+                        var (handle, imgUrl, _) = await _figmaApiService.GetFigmaUserProfileAsync(providerToken);
+                        if (!string.IsNullOrEmpty(handle)) connectedUser = handle;
+                        if (!string.IsNullOrEmpty(imgUrl)) avatarUrl = imgUrl;
+
+                        if (System.Windows.Application.Current != null)
+                        {
+                            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                            {
+                                ConnectedUser = connectedUser;
+                                if (!string.IsNullOrEmpty(avatarUrl)) AvatarUrl = avatarUrl;
+                                IsConnected = true;
+                                CurrentStepIndex = 2;
+                            });
+                        }
+                        else
+                        {
+                            ConnectedUser = connectedUser;
+                            if (!string.IsNullOrEmpty(avatarUrl)) AvatarUrl = avatarUrl;
+                            IsConnected = true;
+                            CurrentStepIndex = 2;
+                        }
                     }
 
                     ShimLogSink.RaiseLog(ShimLogLevel.Info, "Figma OAuth session token successfully retrieved via Supabase.");
                     ShimLogSink.RaiseLog(ShimLogLevel.Info, $"Authenticated as {ConnectedUser}. Auto-transitioning to Screen 2: Target Configuration.");
-
-                    // Transition automatically to Screen 2 (ConfigView)
-                    CurrentStepIndex = 2;
                 }
                 else
                 {
@@ -696,10 +722,12 @@ Welcome to the **UnityUI Transformer**! This utility bridges Figma design frames
 
         private async Task ExecuteSyncAsync()
         {
-            var session = _supabaseAuthService.Client?.Auth?.CurrentSession;
-            if (session == null || string.IsNullOrEmpty(session.AccessToken))
+            string providerToken = ProviderToken;
+
+            if (string.IsNullOrWhiteSpace(providerToken))
             {
-                MessageBox.Show("Login Required: Please click 'Connect with Figma' to authenticate.", "Authentication Error");
+                ShimLogSink.RaiseLog(ShimLogLevel.Error, "[AUTH GATE] Sync execution blocked: Valid Supabase OAuth ProviderToken is missing.");
+                MessageBox.Show("Login Required: Please click 'Connect with Figma' to authenticate and acquire a valid ProviderToken.", "Authentication Error");
                 return;
             }
 
@@ -739,7 +767,7 @@ Welcome to the **UnityUI Transformer**! This utility bridges Figma design frames
                     var (fileId, nodeId) = FigmaApiService.ParseFigmaUrl(FigmaUrl);
                     ShimLogSink.RaiseLog(ShimLogLevel.Info, $"Fetching Figma node {nodeId} (File ID: {fileId})...");
 
-                    var rootNode = await _figmaApiService.GetFigmaNodeModelAsync(FigmaUrl);
+                    var rootNode = await _figmaApiService.GetFigmaNodeModelAsync(FigmaUrl, providerToken);
                     string rootName = rootNode.Name ?? "MainScreen";
 
                     await Task.Delay(300);
