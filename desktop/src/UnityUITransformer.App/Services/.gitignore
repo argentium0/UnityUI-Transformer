@@ -1,5 +1,4 @@
 # Ignore temp/session files in Services while tracking C# source files
-*
 session.dat
 *.dat
 *.local.json

@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using UnityEngine;
 
 namespace Figma2Unity.Pipeline
 {
@@ -29,7 +30,9 @@ namespace Figma2Unity.Pipeline
                 var wait = response.Headers.RetryAfter?.Delta ?? backoff;
                 response.Dispose();
 
-                System.Diagnostics.Debug.WriteLine($"[Rate Limit] 429 Too Many Requests received. Waiting {wait.TotalSeconds} seconds before attempt {attempt + 1}...");
+                string logMsg = $"[Rate Limit] 429 Too Many Requests received. Waiting {wait.TotalSeconds:0.##} seconds before attempt {attempt + 1}...";
+                System.Diagnostics.Debug.WriteLine(logMsg);
+                ShimLogSink.RaiseLog(ShimLogLevel.Warning, logMsg);
 
                 await Task.Delay(wait, ct);
                 backoff += backoff;
