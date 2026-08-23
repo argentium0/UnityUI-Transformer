@@ -58,16 +58,21 @@ namespace UnityUITransformer.App.Services
                 ? $"files/{fileId}"
                 : $"files/{fileId}/nodes?ids={Uri.EscapeDataString(nodeId)}";
 
-            using var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
-            if (!string.IsNullOrWhiteSpace(providerToken))
-            {
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", providerToken);
-                request.Headers.TryAddWithoutValidation("X-Figma-Token", providerToken);
-            }
-
             try
             {
-                using var response = await _httpClient.SendAsync(request);
+                using var response = await Figma2Unity.Pipeline.FigmaHttpRetry.SendWithBackoffAsync(
+                    () =>
+                    {
+                        var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
+                        if (!string.IsNullOrWhiteSpace(providerToken))
+                        {
+                            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", providerToken);
+                            request.Headers.TryAddWithoutValidation("X-Figma-Token", providerToken);
+                        }
+                        return _httpClient.SendAsync(request);
+                    },
+                    CancellationToken.None);
+
                 response.EnsureSuccessStatusCode();
                 return await response.Content.ReadAsStringAsync();
             }
