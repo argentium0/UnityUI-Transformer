@@ -54,9 +54,12 @@ namespace UnityUITransformer.App.Services
             switch (nodeTypeUpper)
             {
                 case "TEXT":
+                    string textValue = !string.IsNullOrWhiteSpace(node.Characters)
+                        ? node.Characters
+                        : (node.Name ?? "Text");
                     element = new XElement(UiNs + "Label",
                         new XAttribute("name", sanitizedName),
-                        new XAttribute("text", node.Characters ?? node.Name ?? "Text"),
+                        new XAttribute("text", textValue),
                         new XAttribute("class", className)
                     );
                     break;

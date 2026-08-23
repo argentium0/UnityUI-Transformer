@@ -38,6 +38,34 @@ namespace UnityUITransformer.App.Tests
         }
 
         [Fact]
+        public void UxmlGenerator_TextNode_UsesCharactersOrFallsBackToNodeName()
+        {
+            var generator = new UxmlGenerator();
+            
+            var textWithCharacters = new FigmaNode
+            {
+                Id = "1:1",
+                Name = "LabelName",
+                Type = "TEXT",
+                Characters = "Actual Typed Text"
+            };
+
+            var textWithoutCharacters = new FigmaNode
+            {
+                Id = "1:2",
+                Name = "FallbackName",
+                Type = "TEXT",
+                Characters = ""
+            };
+
+            string uxmlWithChars = generator.GenerateUxml(textWithCharacters);
+            string uxmlWithoutChars = generator.GenerateUxml(textWithoutCharacters);
+
+            Assert.Contains("text=\"Actual Typed Text\"", uxmlWithChars);
+            Assert.Contains("text=\"FallbackName\"", uxmlWithoutChars);
+        }
+
+        [Fact]
         public void UxmlGenerator_SanitizesNamesAndKebabCaseClasses()
         {
             string clean = UxmlGenerator.SanitizeName("Header - Title @123");

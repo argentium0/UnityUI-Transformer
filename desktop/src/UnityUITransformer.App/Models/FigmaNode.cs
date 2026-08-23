@@ -153,6 +153,24 @@ namespace UnityUITransformer.App.Models
         [JsonPropertyName("absoluteBoundingBox")]
         public FigmaBoundingBox? AbsoluteBoundingBox { get; set; }
 
+        private string _fontFamily = string.Empty;
+
+        [JsonPropertyName("fontFamily")]
+        public string FontFamily
+        {
+            get => !string.IsNullOrEmpty(_fontFamily) ? _fontFamily : (Style?.FontFamily ?? string.Empty);
+            set => _fontFamily = value;
+        }
+
+        private float? _fontSize;
+
+        [JsonPropertyName("fontSize")]
+        public float FontSize
+        {
+            get => _fontSize.HasValue && _fontSize.Value > 0 ? _fontSize.Value : (Style?.FontSize ?? 0f);
+            set => _fontSize = value;
+        }
+
         [JsonPropertyName("style")]
         public FigmaTypeStyle? Style { get; set; }
 

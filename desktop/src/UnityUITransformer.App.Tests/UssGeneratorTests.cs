@@ -94,5 +94,42 @@ namespace UnityUITransformer.App.Tests
             Assert.DoesNotContain("-unity-font-definition", ussOutput);
             Assert.Contains("font-size: 14px;", ussOutput);
         }
+
+        [Fact]
+        public void UssStyleBuilder_AppendLayoutRule_StripsAbsolutePositioning()
+        {
+            var node = new FigmaNode
+            {
+                Name = "FlexboxChild",
+                AbsoluteBoundingBox = new FigmaBoundingBox { X = 100f, Y = 200f, Width = 300f, Height = 150f }
+            };
+
+            var rules = new List<string>();
+            UssStyleBuilder.AppendLayoutRule(node, rules);
+
+            Assert.Contains("width: 300px;", rules);
+            Assert.Contains("height: 150px;", rules);
+            Assert.DoesNotContain(rules, r => r.Contains("position: absolute"));
+            Assert.DoesNotContain(rules, r => r.StartsWith("left:"));
+            Assert.DoesNotContain(rules, r => r.StartsWith("top:"));
+        }
+
+        [Fact]
+        public void UssStyleBuilder_AppendTypographyRule_GeneratesFontSizeAndFontDefinition()
+        {
+            var textNode = new FigmaNode
+            {
+                Name = "TitleText",
+                Type = "TEXT",
+                FontFamily = "Inter Display",
+                FontSize = 18f
+            };
+
+            var rules = new List<string>();
+            UssStyleBuilder.AppendTypographyRule(textNode, rules);
+
+            Assert.Contains("font-size: 18px;", rules);
+            Assert.Contains("-unity-font-definition: url('project://database/Assets/Fonts/InterDisplay.asset');", rules);
+        }
     }
 }

@@ -81,18 +81,8 @@ namespace UnityUITransformer.App.Services
             var rules = new List<string>();
             bool isTextNode = string.Equals(node.Type, "TEXT", StringComparison.OrdinalIgnoreCase);
 
-            // 1. Dimensions (Absolute Bounding Box)
-            if (node.AbsoluteBoundingBox != null)
-            {
-                if (node.AbsoluteBoundingBox.Width.HasValue && node.AbsoluteBoundingBox.Width.Value > 0)
-                {
-                    rules.Add($"width: {node.AbsoluteBoundingBox.Width.Value:0.##}px;");
-                }
-                if (node.AbsoluteBoundingBox.Height.HasValue && node.AbsoluteBoundingBox.Height.Value > 0)
-                {
-                    rules.Add($"height: {node.AbsoluteBoundingBox.Height.Value:0.##}px;");
-                }
-            }
+            // 1. Layout & Dimensions (Responsive Flexbox via UssStyleBuilder)
+            UssStyleBuilder.AppendLayoutRule(node, rules);
 
             // 2. Fills (Background Color for Containers / Text Color for Labels)
             if (node.Fills != null && node.Fills.Count > 0)
@@ -113,23 +103,10 @@ namespace UnityUITransformer.App.Services
             }
 
             // 3. Typography & Text Styles (TextMeshPro Font Definition Mapping)
-            string? rawFontName = !string.IsNullOrWhiteSpace(node.Style?.FontPostScriptName)
-                ? node.Style.FontPostScriptName
-                : node.Style?.FontFamily;
-
-            if (!string.IsNullOrWhiteSpace(rawFontName))
-            {
-                string safeFontName = UxmlGenerator.SanitizeName(rawFontName);
-                rules.Add($"-unity-font-definition: url('project://database/Assets/Fonts/{safeFontName}.asset');");
-            }
+            UssStyleBuilder.AppendTypographyRule(node, rules);
 
             if (node.Style != null)
             {
-                if (node.Style.FontSize.HasValue && node.Style.FontSize.Value > 0)
-                {
-                    rules.Add($"font-size: {node.Style.FontSize.Value:0.##}px;");
-                }
-
                 if (node.Style.FontWeight.HasValue && node.Style.FontWeight.Value >= 600)
                 {
                     rules.Add("-unity-font-style: bold;");
