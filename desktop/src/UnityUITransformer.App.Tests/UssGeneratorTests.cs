@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityUITransformer.App.Models;
 using UnityUITransformer.App.Services;
+using Figma2Unity.Pipeline;
 using Xunit;
 
 namespace UnityUITransformer.App.Tests

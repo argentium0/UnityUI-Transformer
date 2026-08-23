@@ -135,9 +135,6 @@ namespace UnityUITransformer.App.Models
         [JsonPropertyName("type")]
         public string? Type { get; set; }
 
-        [JsonPropertyName("characters")]
-        public string? Characters { get; set; }
-
         [JsonPropertyName("children")]
         public List<FigmaNode>? Children { get; set; }
 
@@ -153,50 +150,67 @@ namespace UnityUITransformer.App.Models
         [JsonPropertyName("absoluteBoundingBox")]
         public FigmaBoundingBox? AbsoluteBoundingBox { get; set; }
 
-        private string _fontFamily = string.Empty;
-
-        [JsonPropertyName("fontFamily")]
-        public string FontFamily
-        {
-            get => !string.IsNullOrEmpty(_fontFamily) ? _fontFamily : (Style?.FontFamily ?? string.Empty);
-            set => _fontFamily = value;
-        }
-
-        private float? _fontSize;
-
-        [JsonPropertyName("fontSize")]
-        public float FontSize
-        {
-            get => _fontSize.HasValue && _fontSize.Value > 0 ? _fontSize.Value : (Style?.FontSize ?? 0f);
-            set => _fontSize = value;
-        }
-
         [JsonPropertyName("style")]
         public FigmaTypeStyle? Style { get; set; }
 
         [JsonPropertyName("layoutMode")]
-        public string? LayoutMode { get; set; }
-
-        [JsonPropertyName("primaryAxisAlignItems")]
-        public string? PrimaryAxisAlignItems { get; set; }
-
-        [JsonPropertyName("counterAxisAlignItems")]
-        public string? CounterAxisAlignItems { get; set; }
-
-        [JsonPropertyName("paddingLeft")]
-        public float? PaddingLeft { get; set; }
-
-        [JsonPropertyName("paddingRight")]
-        public float? PaddingRight { get; set; }
-
-        [JsonPropertyName("paddingTop")]
-        public float? PaddingTop { get; set; }
-
-        [JsonPropertyName("paddingBottom")]
-        public float? PaddingBottom { get; set; }
+        public string LayoutMode { get; set; } = "NONE";
 
         [JsonPropertyName("itemSpacing")]
-        public float? ItemSpacing { get; set; }
+        public float ItemSpacing { get; set; }
+
+        [JsonPropertyName("paddingLeft")]
+        public float PaddingLeft { get; set; }
+
+        [JsonPropertyName("paddingRight")]
+        public float PaddingRight { get; set; }
+
+        [JsonPropertyName("paddingTop")]
+        public float PaddingTop { get; set; }
+
+        [JsonPropertyName("paddingBottom")]
+        public float PaddingBottom { get; set; }
+
+        [JsonPropertyName("primaryAxisAlignItems")]
+        public string PrimaryAxisAlignItems { get; set; } = "MIN";
+
+        [JsonPropertyName("counterAxisAlignItems")]
+        public string CounterAxisAlignItems { get; set; } = "MIN";
+
+        [JsonPropertyName("layoutGrow")]
+        public float? LayoutGrow { get; set; }
+
+        private string _characters = string.Empty;
+        [JsonPropertyName("characters")]
+        public string Characters
+        {
+            get => _characters;
+            set => _characters = value ?? string.Empty;
+        }
+
+        private float _fontSize;
+        [JsonPropertyName("fontSize")]
+        public float FontSize
+        {
+            get => _fontSize > 0 ? _fontSize : (Style?.FontSize ?? 0f);
+            set => _fontSize = value;
+        }
+
+        private string _fontFamily = string.Empty;
+        [JsonPropertyName("fontFamily")]
+        public string FontFamily
+        {
+            get => !string.IsNullOrEmpty(_fontFamily) ? _fontFamily : (Style?.FontFamily ?? string.Empty);
+            set => _fontFamily = value ?? string.Empty;
+        }
+
+        private string _fontWeight = "400";
+        [JsonPropertyName("fontWeight")]
+        public string FontWeight
+        {
+            get => _fontWeight != "400" ? _fontWeight : (Style?.FontWeight.HasValue == true ? Style.FontWeight.Value.ToString("0", System.Globalization.CultureInfo.InvariantCulture) : "400");
+            set => _fontWeight = value ?? "400";
+        }
 
         [JsonPropertyName("cornerRadius")]
         public float? CornerRadius { get; set; }

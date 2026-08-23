@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using UnityUITransformer.App.Models;
+using Figma2Unity.Pipeline;
 
 namespace UnityUITransformer.App.Services
 {
@@ -50,7 +51,7 @@ namespace UnityUITransformer.App.Services
 
             if (node.Children != null && node.Children.Count > 0)
             {
-                float spacing = node.ItemSpacing ?? 0f;
+                float spacing = node.ItemSpacing;
                 bool hasSpacing = spacing > 0 && !string.IsNullOrEmpty(node.LayoutMode);
                 string? modeUpper = node.LayoutMode?.ToUpperInvariant();
 
@@ -188,14 +189,14 @@ namespace UnityUITransformer.App.Services
             }
 
             // 8. Padding
-            if (node.PaddingLeft.HasValue && node.PaddingLeft.Value > 0)
-                rules.Add($"padding-left: {node.PaddingLeft.Value:0.##}px;");
-            if (node.PaddingRight.HasValue && node.PaddingRight.Value > 0)
-                rules.Add($"padding-right: {node.PaddingRight.Value:0.##}px;");
-            if (node.PaddingTop.HasValue && node.PaddingTop.Value > 0)
-                rules.Add($"padding-top: {node.PaddingTop.Value:0.##}px;");
-            if (node.PaddingBottom.HasValue && node.PaddingBottom.Value > 0)
-                rules.Add($"padding-bottom: {node.PaddingBottom.Value:0.##}px;");
+            if (node.PaddingLeft > 0)
+                rules.Add($"padding-left: {node.PaddingLeft:0.##}px;");
+            if (node.PaddingRight > 0)
+                rules.Add($"padding-right: {node.PaddingRight:0.##}px;");
+            if (node.PaddingTop > 0)
+                rules.Add($"padding-top: {node.PaddingTop:0.##}px;");
+            if (node.PaddingBottom > 0)
+                rules.Add($"padding-bottom: {node.PaddingBottom:0.##}px;");
 
             // 9. Background Image Mapping
             bool hasImageFill = node.Fills != null && node.Fills.Exists(f => 
