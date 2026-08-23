@@ -19,6 +19,51 @@
 
 ---
 
+> [!WARNING]
+> ## ⚠️ Development Notice: Desktop App Paused
+> Due to aggressive rate-limiting (429 Too Many Requests) and architectural constraints within the Figma REST API, the standalone WPF Desktop Application is currently on hold. 
+> 
+> For stable, rate-limit-free synchronization, please use the **Plugin-to-Server Pipeline** outlined below.
+
+---
+
+## 🚀 Alternative Pipeline: Figma Plugin -> Fastify -> Unity
+
+This approach bypasses the REST API limits by extracting the layout data directly from within the Figma canvas using a dedicated plugin, routing it through a local Fastify server, and outputting a ready-to-use Unity Package.
+
+### Prerequisites
+* Node.js installed on your machine.
+* Unity Editor (UI Toolkit enabled).
+* The custom Figma Plugin installed in your Figma workspace.
+
+### Step 1: Start the Fastify Server
+The local server listens for the JSON payload sent by the Figma plugin and converts it into Unity assets.
+1. Open your terminal and navigate to the server directory.
+2. Install the dependencies:
+   ```bash
+   npm install
+   ```
+3. Boot the server on port 3000:
+   ```bash
+   npm run start
+   ```
+   *(Ensure the terminal displays `Server listening on http://localhost:3000`)*
+
+### Step 2: Export from Figma
+1. Open your target design file in the Figma desktop or web app.
+2. Launch the **UnityUI Transformer Figma Plugin**.
+3. Click **Export to Localhost**. The plugin will traverse the Auto Layout tree, batch the images, and POST the payload to your Fastify server.
+
+### Step 3: Import into Unity
+Once the Fastify server processes the payload, it will generate a `.unitypackage` file in your output directory.
+1. Open your Unity project.
+2. Go to **Assets > Import Package > Custom Package...**
+3. Select the newly generated package to import your `.uxml`, `.uss`, and `.png` files directly into your project.
+
+*Maintained by Muhammad Abdullah*
+
+---
+
 ## ⚡ Overview & Elevator Pitch
 
 **UnityUI Transformer** is a standalone, enterprise-grade desktop utility that bridges the gap between Figma design tokens and Unity UI Toolkit. By parsing Figma REST API node trees, the engine translates Auto-Layout flex direction, padding, gap, and bounds directly into production-ready `.uxml` layout templates and `.uss` style sheets.
