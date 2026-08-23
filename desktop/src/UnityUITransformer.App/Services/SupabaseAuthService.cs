@@ -23,20 +23,69 @@ namespace UnityUITransformer.App.Services
         public bool IsInitialized => _client != null;
         public Supabase.Client? Client => _client;
 
+        static SupabaseAuthService()
+        {
+            LoadDotEnv();
+        }
+
         public SupabaseAuthService(string? supabaseUrl = null, string? supabaseAnonKey = null)
         {
             _supabaseUrl = supabaseUrl 
                 ?? Environment.GetEnvironmentVariable("SUPABASE_URL") 
-                ?? "https://zhsbdxmjoyxoydczpikb.supabase.co";
+                ?? string.Empty;
 
             _supabaseAnonKey = supabaseAnonKey 
                 ?? Environment.GetEnvironmentVariable("SUPABASE_ANON_KEY") 
-                ?? "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpoc2JkeG1qb3l4b3lkY3pwaWtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczMDc2NTMsImV4cCI6MjEwMjg4MzY1M30.FOAA9GpJPRk6iF0Pso-uZHn6oHU6wKgOQa7j_80MwB8";
+                ?? string.Empty;
+        }
+
+        private static void LoadDotEnv()
+        {
+            try
+            {
+                string currentDir = AppDomain.CurrentDomain.BaseDirectory;
+                for (int i = 0; i < 4 && !string.IsNullOrEmpty(currentDir); i++)
+                {
+                    string envPath = System.IO.Path.Combine(currentDir, ".env");
+                    if (System.IO.File.Exists(envPath))
+                    {
+                        foreach (var line in System.IO.File.ReadAllLines(envPath))
+                        {
+                            var trimmed = line.Trim();
+                            if (string.IsNullOrWhiteSpace(trimmed) || trimmed.StartsWith("#")) continue;
+
+                            var parts = trimmed.Split('=', 2);
+                            if (parts.Length == 2)
+                            {
+                                string key = parts[0].Trim();
+                                string val = parts[1].Trim();
+                                if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable(key)))
+                                {
+                                    Environment.SetEnvironmentVariable(key, val);
+                                }
+                            }
+                        }
+                        break;
+                    }
+                    var parent = System.IO.Directory.GetParent(currentDir);
+                    if (parent == null) break;
+                    currentDir = parent.FullName;
+                }
+            }
+            catch
+            {
+                // Non-critical local environment helper
+            }
         }
 
         public async Task InitializeAsync()
         {
             if (_client != null) return;
+
+            if (string.IsNullOrWhiteSpace(_supabaseUrl) || string.IsNullOrWhiteSpace(_supabaseAnonKey))
+            {
+                throw new InvalidOperationException("Supabase configuration missing: SUPABASE_URL and SUPABASE_ANON_KEY must be set in environment variables or local .env file.");
+            }
 
             var options = new SupabaseOptions
             {

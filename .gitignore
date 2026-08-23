@@ -76,6 +76,10 @@ agent_docs/
 # ------------------------------------------------------------------------------
 .env
 .env.*
+!.env.example
+appsettings.json
+appsettings.Development.json
+!appsettings.Development.json.example
 *.pem
 *.key
 *.p12
