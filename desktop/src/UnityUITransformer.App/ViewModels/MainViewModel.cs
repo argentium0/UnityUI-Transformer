@@ -768,14 +768,15 @@ Welcome to the **UnityUI Transformer**! This utility bridges Figma design frames
                     ShimLogSink.RaiseLog(ShimLogLevel.Info, $"Fetching Figma node {nodeId} (File ID: {fileId})...");
 
                     var rootNode = await _figmaApiService.GetFigmaNodeModelAsync(FigmaUrl, providerToken);
-                    string rootName = rootNode.Name ?? "MainScreen";
+                    string rawRootName = rootNode.Name ?? "MainScreen";
+                    string safeName = UxmlGenerator.SanitizeName(rawRootName);
 
                     await Task.Delay(300);
                     UpdateProgress(55, "Generating UXML layout tree...");
 
-                    string ussFileName = $"{UxmlGenerator.SanitizeName(rootName)}.uss";
+                    string ussFileName = $"{safeName}.uss";
                     string uxmlContent = _uxmlGenerator.GenerateUxml(rootNode, ussFileName);
-                    ShimLogSink.RaiseLog(ShimLogLevel.Info, $"Generated {UxmlGenerator.SanitizeName(rootName)}.uxml layout.");
+                    ShimLogSink.RaiseLog(ShimLogLevel.Info, $"Generated {safeName}.uxml layout.");
 
                     await Task.Delay(300);
                     UpdateProgress(80, "Generating USS styles...");
@@ -786,8 +787,8 @@ Welcome to the **UnityUI Transformer**! This utility bridges Figma design frames
                     await Task.Delay(250);
                     UpdateProgress(95, "Saving output files...");
 
-                    string uxmlPath = await _exportService.ExportUxmlAsync(uxmlContent, UnityAssetsPath, rootName);
-                    string ussPath = await _exportService.ExportUssAsync(ussContent, UnityAssetsPath, rootName);
+                    string uxmlPath = await _exportService.ExportUxmlAsync(uxmlContent, UnityAssetsPath, safeName);
+                    string ussPath = await _exportService.ExportUssAsync(ussContent, UnityAssetsPath, safeName);
 
                     await Task.Delay(200);
                     UpdateProgress(100, "Transformation Complete!");

@@ -6,12 +6,34 @@ using Xunit;
 
 namespace UnityUITransformer.App.Tests
 {
+    public class MockHttpMessageHandler : System.Net.Http.HttpMessageHandler
+    {
+        private readonly string _responseJson;
+
+        public MockHttpMessageHandler(string responseJson)
+        {
+            _responseJson = responseJson;
+        }
+
+        protected override Task<System.Net.Http.HttpResponseMessage> SendAsync(System.Net.Http.HttpRequestMessage request, System.Threading.CancellationToken cancellationToken)
+        {
+            var response = new System.Net.Http.HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new System.Net.Http.StringContent(_responseJson, System.Text.Encoding.UTF8, "application/json")
+            };
+            return Task.FromResult(response);
+        }
+    }
+
     public class MainViewModelTests
     {
-        private MainViewModel CreateIsolatedViewModel()
+        private MainViewModel CreateIsolatedViewModel(FigmaApiService? figmaApiService = null)
         {
             string tempFile = System.IO.Path.Combine(System.IO.Path.GetTempPath(), System.Guid.NewGuid().ToString("N") + ".dat");
-            return new MainViewModel(secureStorageService: new SecureStorageService(tempFile));
+            return new MainViewModel(
+                secureStorageService: new SecureStorageService(tempFile),
+                figmaApiService: figmaApiService
+            );
         }
 
         [Fact]
@@ -87,7 +109,32 @@ namespace UnityUITransformer.App.Tests
         [Fact]
         public async Task SyncCommand_ExecutesPipeline_AndEmitsShimLogs()
         {
-            var vm = CreateIsolatedViewModel();
+            string sampleJson = @"{
+                ""name"": ""App Design"",
+                ""nodes"": {
+                    ""1:2"": {
+                        ""document"": {
+                            ""id"": ""1:2"",
+                            ""name"": ""MainCard"",
+                            ""type"": ""FRAME"",
+                            ""children"": [
+                                {
+                                    ""id"": ""1:3"",
+                                    ""name"": ""TitleLabel"",
+                                    ""type"": ""TEXT"",
+                                    ""characters"": ""Test Layout Title""
+                                }
+                            ]
+                        }
+                    }
+                }
+            }";
+
+            var handler = new MockHttpMessageHandler(sampleJson);
+            var httpClient = new System.Net.Http.HttpClient(handler);
+            var figmaApiService = new FigmaApiService(httpClient);
+
+            var vm = CreateIsolatedViewModel(figmaApiService);
             vm.FigmaUrl = "https://www.figma.com/file/XYZ12345/App-Design?node-id=1:2";
             vm.UnityAssetsPath = @"C:\MyProject\Assets\UI";
 

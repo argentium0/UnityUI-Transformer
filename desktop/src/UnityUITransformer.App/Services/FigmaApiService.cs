@@ -54,12 +54,15 @@ namespace UnityUITransformer.App.Services
         public async Task<string> GetFigmaNodeAsync(string figmaUrl, string? providerToken = null)
         {
             var (fileId, nodeId) = ParseFigmaUrl(figmaUrl);
-            string endpoint = $"files/{fileId}/nodes?ids={Uri.EscapeDataString(nodeId)}";
+            string endpoint = string.IsNullOrEmpty(nodeId)
+                ? $"files/{fileId}"
+                : $"files/{fileId}/nodes?ids={Uri.EscapeDataString(nodeId)}";
 
             using var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
             if (!string.IsNullOrWhiteSpace(providerToken))
             {
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", providerToken);
+                request.Headers.TryAddWithoutValidation("X-Figma-Token", providerToken);
             }
 
             try
@@ -129,72 +132,82 @@ namespace UnityUITransformer.App.Services
                 return JsonSerializer.Deserialize<FigmaNode>(rootDocElement.GetRawText(), options);
             }
 
-            return null;
+            try
+            {
+                return JsonSerializer.Deserialize<FigmaNode>(json, options);
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         public async Task<FigmaNode> GetFigmaNodeModelAsync(string figmaUrl, string? providerToken = null)
         {
             var (fileId, nodeId) = ParseFigmaUrl(figmaUrl);
 
-            try
+            string json = await GetFigmaNodeAsync(figmaUrl, providerToken);
+            var options = new JsonSerializerOptions
             {
-                string json = await GetFigmaNodeAsync(figmaUrl, providerToken);
-                var options = new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true,
-                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-                };
-
-                var root = ExtractFigmaNode(json, nodeId, options);
-                if (root != null) return root;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[FigmaApiService] Failed to fetch or extract node: {ex.Message}");
-                // Fallback to simulated node hierarchy for offline local dev/testing
-            }
-
-            return new FigmaNode
-            {
-                Id = string.IsNullOrEmpty(nodeId) ? "0:1" : nodeId,
-                Name = "RootContainer",
-                Type = "FRAME",
-                AbsoluteBoundingBox = new FigmaBoundingBox { Width = 1920, Height = 1080 },
-                Fills = new System.Collections.Generic.List<FigmaPaint>
-                {
-                    new FigmaPaint
-                    {
-                        Type = "SOLID",
-                        Color = new FigmaColor { R = 0.12f, G = 0.12f, B = 0.12f, A = 1.0f }
-                    }
-                },
-                Children = new System.Collections.Generic.List<FigmaNode>
-                {
-                    new FigmaNode
-                    {
-                        Id = "1:2",
-                        Name = "HeaderTitle",
-                        Type = "TEXT",
-                        Characters = "Welcome to Unity UI",
-                        AbsoluteBoundingBox = new FigmaBoundingBox { Width = 400, Height = 50 }
-                    },
-                    new FigmaNode
-                    {
-                        Id = "1:3",
-                        Name = "ActionButton",
-                        Type = "RECTANGLE",
-                        AbsoluteBoundingBox = new FigmaBoundingBox { Width = 200, Height = 60 },
-                        Fills = new System.Collections.Generic.List<FigmaPaint>
-                        {
-                            new FigmaPaint
-                            {
-                                Type = "SOLID",
-                                Color = new FigmaColor { R = 0.2f, G = 0.6f, B = 1.0f, A = 1.0f }
-                            }
-                        }
-                    }
-                }
+                PropertyNameCaseInsensitive = true,
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
             };
+
+            var root = ExtractFigmaNode(json, nodeId, options);
+            if (root != null)
+            {
+                return root;
+            }
+
+            throw new InvalidOperationException($"Could not parse valid FigmaNode root document from response for file '{fileId}' node '{nodeId}'.");
+        }
+
+        // TODO: Implement full image asset download pipeline using Figma's REST API /v1/images/:key endpoint.
+        // This method queries Figma for rendered image URLs for nodes containing imageRef or vector icon assets.
+        public Task<System.Collections.Generic.Dictionary<string, string>> ExportFigmaImagesAsync(string fileKey, System.Collections.Generic.IEnumerable<string> nodeIds, string? providerToken = null, string format = "png", float scale = 2.0f)
+        {
+            var imageMap = new System.Collections.Generic.Dictionary<string, string>();
+            return Task.FromResult(imageMap);
+        }
+
+        public static bool IsVisualAssetNode(FigmaNode node)
+        {
+            if (node == null || string.IsNullOrWhiteSpace(node.Id)) return false;
+            bool isText = string.Equals(node.Type, "TEXT", StringComparison.OrdinalIgnoreCase);
+            if (isText) return false;
+
+            bool hasFills = node.Fills != null && node.Fills.Exists(f => f.Visible != false);
+            bool isVisualType = string.Equals(node.Type, "IMAGE", StringComparison.OrdinalIgnoreCase) ||
+                                string.Equals(node.Type, "VECTOR", StringComparison.OrdinalIgnoreCase) ||
+                                string.Equals(node.Type, "RECTANGLE", StringComparison.OrdinalIgnoreCase) ||
+                                string.Equals(node.Type, "ELLIPSE", StringComparison.OrdinalIgnoreCase);
+
+            return hasFills || isVisualType;
+        }
+
+        public static System.Collections.Generic.List<string> CollectImageNodes(FigmaNode node)
+        {
+            var list = new System.Collections.Generic.List<string>();
+            TraverseForImageNodes(node, list);
+            return list;
+        }
+
+        private static void TraverseForImageNodes(FigmaNode node, System.Collections.Generic.List<string> list)
+        {
+            if (node == null) return;
+
+            if (IsVisualAssetNode(node) && !string.IsNullOrWhiteSpace(node.Id))
+            {
+                list.Add(node.Id);
+            }
+
+            if (node.Children != null)
+            {
+                foreach (var child in node.Children)
+                {
+                    TraverseForImageNodes(child, list);
+                }
+            }
         }
     }
 }

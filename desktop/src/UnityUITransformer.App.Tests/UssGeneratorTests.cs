@@ -39,6 +39,7 @@ namespace UnityUITransformer.App.Tests
                         Characters = "Welcome Title",
                         Style = new FigmaTypeStyle
                         {
+                            FontFamily = "Roboto",
                             FontSize = 24f,
                             FontWeight = 700f,
                             TextAlignHorizontal = "CENTER"
@@ -63,14 +64,35 @@ namespace UnityUITransformer.App.Tests
             Assert.Contains("height: 600px;", ussOutput);
             Assert.Contains("background-color: rgba(26, 51, 76, 1);", ussOutput);
             Assert.Contains("flex-direction: column;", ussOutput);
-            Assert.Contains("gap: 16px;", ussOutput);
+            Assert.DoesNotContain("gap:", ussOutput);
             Assert.Contains("padding-left: 20px;", ussOutput);
 
             Assert.Contains(".header-label {", ussOutput);
+            Assert.Contains("-unity-font-definition: url('project://database/Assets/Fonts/Roboto.asset');", ussOutput);
             Assert.Contains("color: rgba(255, 255, 255, 1);", ussOutput);
             Assert.Contains("font-size: 24px;", ussOutput);
             Assert.Contains("-unity-font-style: bold;", ussOutput);
             Assert.Contains("-unity-text-align: middle-center;", ussOutput);
+        }
+
+        [Fact]
+        public void GenerateUss_TextNodeWithoutFontName_OmitsUnityFontDefinition()
+        {
+            var generator = new UssGenerator();
+            var textNode = new FigmaNode
+            {
+                Name = "Anonymous Label",
+                Type = "TEXT",
+                Style = new FigmaTypeStyle
+                {
+                    FontSize = 14f
+                }
+            };
+
+            string ussOutput = generator.GenerateUss(textNode);
+
+            Assert.DoesNotContain("-unity-font-definition", ussOutput);
+            Assert.Contains("font-size: 14px;", ussOutput);
         }
     }
 }

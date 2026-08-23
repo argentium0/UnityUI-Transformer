@@ -23,12 +23,13 @@ namespace UnityUITransformer.App.Services
                 fileName = "GeneratedLayout";
             }
 
-            if (!fileName.EndsWith(".uxml", StringComparison.OrdinalIgnoreCase))
+            string safeFileName = UxmlGenerator.SanitizeName(fileName);
+            if (!safeFileName.EndsWith(".uxml", StringComparison.OrdinalIgnoreCase))
             {
-                fileName += ".uxml";
+                safeFileName += ".uxml";
             }
 
-            string fullPath = Path.Combine(targetDirectory, fileName);
+            string fullPath = Path.Combine(targetDirectory, safeFileName);
             await File.WriteAllTextAsync(fullPath, uxmlContent);
 
             return fullPath;
@@ -51,12 +52,13 @@ namespace UnityUITransformer.App.Services
                 fileName = "GeneratedStyle";
             }
 
-            if (!fileName.EndsWith(".uss", StringComparison.OrdinalIgnoreCase))
+            string safeFileName = UxmlGenerator.SanitizeName(fileName);
+            if (!safeFileName.EndsWith(".uss", StringComparison.OrdinalIgnoreCase))
             {
-                fileName += ".uss";
+                safeFileName += ".uss";
             }
 
-            string fullPath = Path.Combine(targetDirectory, fileName);
+            string fullPath = Path.Combine(targetDirectory, safeFileName);
             await File.WriteAllTextAsync(fullPath, ussContent);
 
             return fullPath;

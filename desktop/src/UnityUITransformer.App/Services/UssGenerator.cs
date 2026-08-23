@@ -21,7 +21,7 @@ namespace UnityUITransformer.App.Services
             return sb.ToString();
         }
 
-        private void TraverseAndGenerateNodeUss(FigmaNode node, StringBuilder sb, HashSet<string> visitedClasses)
+        private void TraverseAndGenerateNodeUss(FigmaNode node, StringBuilder sb, HashSet<string> visitedClasses, string? extraMarginRule = null)
         {
             string sanitizedName = UxmlGenerator.SanitizeName(node.Name ?? "Element");
             string className = UxmlGenerator.ToKebabCase(sanitizedName);
@@ -30,7 +30,7 @@ namespace UnityUITransformer.App.Services
             {
                 visitedClasses.Add(className);
 
-                var rules = GenerateNodeRules(node);
+                var rules = GenerateNodeRules(node, extraMarginRule);
                 // Ensure every node with a class receives its CSS block
                 sb.AppendLine($".{className} {{");
                 if (rules.Count > 0)
@@ -48,16 +48,35 @@ namespace UnityUITransformer.App.Services
                 sb.AppendLine();
             }
 
-            if (node.Children != null)
+            if (node.Children != null && node.Children.Count > 0)
             {
-                foreach (var child in node.Children)
+                float spacing = node.ItemSpacing ?? 0f;
+                bool hasSpacing = spacing > 0 && !string.IsNullOrEmpty(node.LayoutMode);
+                string? modeUpper = node.LayoutMode?.ToUpperInvariant();
+
+                for (int i = 0; i < node.Children.Count; i++)
                 {
-                    TraverseAndGenerateNodeUss(child, sb, visitedClasses);
+                    var child = node.Children[i];
+                    string? childExtraMargin = null;
+
+                    if (hasSpacing && i < node.Children.Count - 1)
+                    {
+                        if (modeUpper == "VERTICAL")
+                        {
+                            childExtraMargin = $"margin-bottom: {spacing:0.##}px;";
+                        }
+                        else if (modeUpper == "HORIZONTAL")
+                        {
+                            childExtraMargin = $"margin-right: {spacing:0.##}px;";
+                        }
+                    }
+
+                    TraverseAndGenerateNodeUss(child, sb, visitedClasses, childExtraMargin);
                 }
             }
         }
 
-        public List<string> GenerateNodeRules(FigmaNode node)
+        public List<string> GenerateNodeRules(FigmaNode node, string? extraMarginRule = null)
         {
             var rules = new List<string>();
             bool isTextNode = string.Equals(node.Type, "TEXT", StringComparison.OrdinalIgnoreCase);
@@ -93,7 +112,17 @@ namespace UnityUITransformer.App.Services
                 }
             }
 
-            // 3. Typography & Text Styles (for Text Nodes)
+            // 3. Typography & Text Styles (TextMeshPro Font Definition Mapping)
+            string? rawFontName = !string.IsNullOrWhiteSpace(node.Style?.FontPostScriptName)
+                ? node.Style.FontPostScriptName
+                : node.Style?.FontFamily;
+
+            if (!string.IsNullOrWhiteSpace(rawFontName))
+            {
+                string safeFontName = UxmlGenerator.SanitizeName(rawFontName);
+                rules.Add($"-unity-font-definition: url('project://database/Assets/Fonts/{safeFontName}.asset');");
+            }
+
             if (node.Style != null)
             {
                 if (node.Style.FontSize.HasValue && node.Style.FontSize.Value > 0)
@@ -175,10 +204,10 @@ namespace UnityUITransformer.App.Services
                 }
             }
 
-            // 7. Item Spacing / Gap
-            if (node.ItemSpacing.HasValue && node.ItemSpacing.Value > 0)
+            // 7. Item Spacing / Gap Polyfill (Applied via sibling extraMarginRule)
+            if (!string.IsNullOrEmpty(extraMarginRule))
             {
-                rules.Add($"gap: {node.ItemSpacing.Value:0.##}px;");
+                rules.Add(extraMarginRule);
             }
 
             // 8. Padding
@@ -190,6 +219,20 @@ namespace UnityUITransformer.App.Services
                 rules.Add($"padding-top: {node.PaddingTop.Value:0.##}px;");
             if (node.PaddingBottom.HasValue && node.PaddingBottom.Value > 0)
                 rules.Add($"padding-bottom: {node.PaddingBottom.Value:0.##}px;");
+
+            // 9. Background Image Mapping
+            bool hasImageFill = node.Fills != null && node.Fills.Exists(f => 
+                f.Visible != false && 
+                (!string.IsNullOrEmpty(f.ImageRef) || string.Equals(f.Type, "IMAGE", StringComparison.OrdinalIgnoreCase)));
+
+            bool isImageOrVector = string.Equals(node.Type, "IMAGE", StringComparison.OrdinalIgnoreCase) ||
+                                   string.Equals(node.Type, "VECTOR", StringComparison.OrdinalIgnoreCase);
+
+            if (hasImageFill || isImageOrVector)
+            {
+                string safeName = UxmlGenerator.SanitizeName(node.Name ?? "Image");
+                rules.Add($"background-image: url('project://database/Assets/Figma2Unity/Images/{safeName}.png');");
+            }
 
             return rules;
         }

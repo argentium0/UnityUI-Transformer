@@ -48,6 +48,13 @@ namespace UnityUITransformer.App.Tests
         }
 
         [Fact]
+        public void UxmlGenerator_SanitizesNodeIdForFileName_Correctly()
+        {
+            string sanitized = UxmlGenerator.SanitizeNodeIdForFileName("1:2;3:4");
+            Assert.Equal("1_2_3_4", sanitized);
+        }
+
+        [Fact]
         public async Task ExportService_ExportsUxmlFileToDirectory()
         {
             var exportService = new ExportService();
@@ -63,6 +70,54 @@ namespace UnityUITransformer.App.Tests
 
             // Clean up
             Directory.Delete(tempDir, true);
+        }
+
+        [Fact]
+        public void FigmaApiService_CollectsImageNodes_Correctly()
+        {
+            var root = new FigmaNode
+            {
+                Id = "1:1",
+                Name = "Main Screen",
+                Type = "FRAME",
+                Children = new List<FigmaNode>
+                {
+                    new FigmaNode
+                    {
+                        Id = "1:2",
+                        Name = "Hero Image",
+                        Type = "RECTANGLE",
+                        Fills = new List<FigmaPaint>
+                        {
+                            new FigmaPaint
+                            {
+                                Type = "IMAGE",
+                                ImageRef = "img_123"
+                            }
+                        }
+                    },
+                    new FigmaNode
+                    {
+                        Id = "1:3",
+                        Name = "Vector Icon",
+                        Type = "RECTANGLE",
+                        Fills = new List<FigmaPaint>
+                        {
+                            new FigmaPaint
+                            {
+                                Type = "IMAGE",
+                                ImageRef = "icon_456"
+                            }
+                        }
+                    }
+                }
+            };
+
+            var imageNodes = FigmaApiService.CollectImageNodes(root);
+
+            Assert.Equal(2, imageNodes.Count);
+            Assert.Contains("1:2", imageNodes);
+            Assert.Contains("1:3", imageNodes);
         }
     }
 }

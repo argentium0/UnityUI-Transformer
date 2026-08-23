@@ -95,8 +95,26 @@ namespace UnityUITransformer.App.Services
         public static string SanitizeName(string? rawName)
         {
             if (string.IsNullOrWhiteSpace(rawName)) return "Element";
-            string clean = Regex.Replace(rawName, @"[^\w\-]", "");
+            string name = rawName.Trim();
+            if (name.EndsWith(".uxml", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".uss", StringComparison.OrdinalIgnoreCase))
+            {
+                name = name.Substring(0, name.Length - 5);
+            }
+            string clean = Regex.Replace(name, @"[^\w\-]", "");
             return string.IsNullOrEmpty(clean) ? "Element" : clean;
+        }
+
+        public static string SanitizeNodeIdForFileName(string? rawId)
+        {
+            if (string.IsNullOrWhiteSpace(rawId)) return "1_0";
+            return rawId.Replace(":", "_").Replace(";", "_");
+        }
+
+        public static string GetHashedImageFileName(string? rawId)
+        {
+            if (string.IsNullOrWhiteSpace(rawId)) return "img_0.png";
+            int hash = Math.Abs(rawId.GetHashCode());
+            return $"img_{hash}.png";
         }
 
         public static string ToKebabCase(string name)

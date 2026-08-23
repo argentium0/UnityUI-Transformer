@@ -41,6 +41,9 @@ namespace UnityUITransformer.App.Models
 
         [JsonPropertyName("opacity")]
         public float? Opacity { get; set; }
+
+        [JsonPropertyName("imageRef")]
+        public string? ImageRef { get; set; }
     }
 
     public class FigmaBoundingBox
@@ -62,6 +65,9 @@ namespace UnityUITransformer.App.Models
     {
         [JsonPropertyName("fontFamily")]
         public string? FontFamily { get; set; }
+
+        [JsonPropertyName("fontPostScriptName")]
+        public string? FontPostScriptName { get; set; }
 
         [JsonPropertyName("fontSize")]
         public float? FontSize { get; set; }
